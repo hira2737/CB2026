@@ -1,10 +1,17 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Film, Search, User, LogOut, LayoutDashboard } from "lucide-react";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user"));
+
+  const isActive = (paths) => paths.includes(location.pathname);
+  const navClass = (active) =>
+    `text-sm font-bold uppercase tracking-widest transition-colors cursor-pointer ${
+      active ? "text-[#f5c518]" : "text-gray-400 hover:text-[#f5c518]"
+    }`;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -14,7 +21,7 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-screen-2xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 min-h-20 py-3 flex flex-wrap items-center justify-between gap-3">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="bg-[#f5c518] p-1.5 rounded-lg">
@@ -26,34 +33,34 @@ const Navbar = () => {
         </Link>
 
         {/* Centered Navigation */}
-        <div className="hidden md:flex items-center gap-10">
+        <div className="order-3 flex w-full items-center justify-center gap-6 overflow-x-auto border-t border-white/5 pt-3 md:order-none md:w-auto md:border-t-0 md:pt-0 md:gap-10">
           <button
             onClick={() => {
               navigate("/");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="text-sm font-bold uppercase tracking-widest text-[#f5c518] hover:text-white transition-colors cursor-pointer"
+            className={navClass(isActive(["/"]))}
           >
             Home
           </button>
           <button
             onClick={() => {
-              if (window.location.pathname !== "/") {
-                navigate("/#movies-section");
+              if (location.pathname !== "/" && location.pathname !== "/movies") {
+                navigate("/movies");
               } else {
                 document
-                  .getElementById("movies-section")
+                  .getElementById("search-movies-section")
                   ?.scrollIntoView({ behavior: "smooth" });
               }
             }}
-            className="text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-[#f5c518] transition-colors cursor-pointer"
+            className={navClass(isActive(["/movies"]))}
           >
             Movies
           </button>
           {user && user.role !== "admin" && (
             <Link
-              to="/dashboard"
-              className="text-sm font-bold uppercase tracking-widest text-gray-400 hover:text-[#f5c518] transition-colors"
+              to="/bookings"
+              className={navClass(isActive(["/bookings", "/dashboard"]))}
             >
               My Bookings
             </Link>
@@ -97,10 +104,10 @@ const Navbar = () => {
                 </Link>
               )}
               {user.role !== "admin" && (
-                <Link
-                  to="/dashboard"
-                  className="btn-fill-gold !py-1.5 !px-4 text-[10px] tracking-widest flex items-center gap-2"
-                >
+              <Link
+                to="/bookings"
+                className="btn-fill-gold !py-1.5 !px-4 text-[10px] tracking-widest flex items-center gap-2"
+              >
                   <User size={14} /> ACCOUNT
                 </Link>
               )}

@@ -1,5 +1,6 @@
 const SeatLock = require("../Models/SeatLock");
 const Booking = require("../Models/Booking");
+const Show = require("../Models/Show");
 
 // ===============================
 // LOCK SEATS
@@ -12,6 +13,18 @@ exports.lockSeats = async (req, res) => {
     if (!showId || !seats || !Array.isArray(seats) || seats.length === 0) {
       return res.status(400).json({
         message: "showId and seats are required",
+      });
+    }
+
+    const activeShow = await Show.findOne({
+      _id: showId,
+      isActive: true,
+      startTime: { $gte: new Date() },
+    });
+
+    if (!activeShow) {
+      return res.status(400).json({
+        message: "Show is no longer available for booking",
       });
     }
 

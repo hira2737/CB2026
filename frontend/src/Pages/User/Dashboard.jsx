@@ -13,6 +13,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+const getBookingCategory = (booking) => {
+  const category = booking.show?.movie?.category;
+  return typeof category === "object" ? category?.name : category;
+};
+
 const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
@@ -57,7 +62,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <div className="max-w-screen-2xl mx-auto px-12 pt-32 pb-24 flex flex-col lg:flex-row gap-12">
+      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 pt-36 md:pt-32 pb-24 flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Sidebar - Profile */}
         <aside className="w-full lg:w-96 shrink-0">
           <div className="bg-[#1a1a1a] rounded-[40px] p-10 border border-white/10 lg:sticky lg:top-32 relative overflow-hidden">
@@ -168,8 +173,8 @@ const Dashboard = () => {
 
         {/* Right Content - My Bookings */}
         <main className="flex-1">
-          <div className="flex items-center justify-between mb-12">
-            <h1 className="text-5xl font-black uppercase tracking-tighter">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-12">
+            <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter">
               My <span className="text-[#f5c518]">Bookings</span>
             </h1>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
@@ -198,13 +203,13 @@ const Dashboard = () => {
                 {/* Details */}
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
                       <div>
                         <h3 className="text-2xl font-black uppercase tracking-tighter text-white group-hover:text-[#f5c518] transition-colors mb-1 truncate max-w-sm">
                           {booking.show?.movie?.title}
                         </h3>
                         <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">
-                          {booking.show?.movie?.genre?.join(" • ")}
+                          {getBookingCategory(booking) || "Uncategorized"}
                         </p>
                       </div>
                       <span className="px-4 py-1.5 bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-500/20 shrink-0">
@@ -212,7 +217,7 @@ const Dashboard = () => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
                       <div className="flex items-center gap-3">
                         <Calendar size={16} className="text-[#f5c518]" />
                         <div>

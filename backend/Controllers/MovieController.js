@@ -22,10 +22,6 @@ const normalizeMoviePayload = (payload) => {
     movieData.language = parseList(movieData.language);
   }
 
-  if (movieData.genre !== undefined) {
-    movieData.genre = parseList(movieData.genre);
-  }
-
   if (movieData.formats !== undefined) {
     movieData.formats = parseList(movieData.formats);
   }
@@ -36,12 +32,13 @@ const normalizeMoviePayload = (payload) => {
 // GET ALL MOVIES
 exports.getMovies = async (req, res) => {
   try {
-    const { genre, category, search } = req.query;
+    const { category, categories, search } = req.query;
 
     let query = {};
 
-    if (category) query.category = category;
-    else if (genre) query.category = genre;
+    const categoryFilter = category || categories;
+
+    if (categoryFilter) query.category = categoryFilter;
 
     if (search) {
       query.title = {

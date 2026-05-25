@@ -27,6 +27,7 @@ function App() {
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/movies" element={<Home />} />
         <Route path="/movie/:id" element={<MovieDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -56,6 +57,14 @@ function App() {
         />
         <Route
           path="/dashboard"
+          element={
+            <ProtectedRoute role="user">
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings"
           element={
             <ProtectedRoute role="user">
               <Dashboard />

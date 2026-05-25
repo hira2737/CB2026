@@ -427,23 +427,17 @@ const AdminDashboard = () => {
         endClock,
       } = newShow;
 
-      // Prevent past dates
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Merge date + time
+      const startTime = new Date(`${showDate}T${startClock}`);
+      const endTime = new Date(`${showDate}T${endClock}`);
 
-      const selectedDate = new Date(showDate);
-
-      if (selectedDate < today) {
-        toast.error("Cannot create shows for past dates", {
+      if (startTime < new Date()) {
+        toast.error("Cannot create shows in the past", {
           id: loadingToast,
         });
 
         return;
       }
-
-      // Merge date + time
-      const startTime = new Date(`${showDate}T${startClock}`);
-      const endTime = new Date(`${showDate}T${endClock}`);
 
       if (endTime <= startTime) {
         toast.error("End time must be after start time", {

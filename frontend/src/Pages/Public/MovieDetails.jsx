@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import API from "../../config/api";
@@ -20,11 +20,136 @@ import {
   formatRating,
   getBackdropUrl,
   getMovieFormats,
-  getMovieGenres,
+  getMovieCategories,
   getMovieLanguages,
   normalizeArrayResponse,
   normalizeSingleResponse,
 } from "../../utils/movieFormatters";
+
+const SEAT_CATEGORY_SUMMARY = [
+  {
+    category: "PLATINUM",
+    price: 360,
+    rows: ["A", "B"],
+    seatsPerRow: 14,
+  },
+  {
+    category: "GOLD",
+    price: 270,
+    rows: ["C", "D", "E", "F"],
+    seatsPerRow: 16,
+  },
+  {
+    category: "SILVER",
+    price: 180,
+    rows: ["G", "H", "I", "J"],
+    seatsPerRow: 18,
+  },
+];
+
+const toDateKey = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const buildDateTabs = (days = 7) => {
+  const today = new Date();
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
+
+    return {
+      key: toDateKey(date),
+      label:
+        index === 0 ? "Today" : index === 1 ? "Tomorrow" : date.toLocaleDateString([], { weekday: "short" }),
+      date: date.toLocaleDateString([], {
+        day: "2-digit",
+        month: "short",
+      }),
+    };
+  });
+};
+
+const getAvailability = (bookedCount, totalSeats) => {
+  const total = Number(totalSeats || 0);
+  const booked = Number(bookedCount || 0);
+  const percentage = total > 0 ? (booked / total) * 100 : 0;
+
+  if (percentage >= 100) return { label: "Sold Out", tone: "text-gray-400", border: "border-gray-500/50" };
+  if (percentage >= 95) return { label: "Few Seats Left", tone: "text-red-400", border: "border-red-400/60" };
+  if (percentage >= 80) return { label: "Almost Full", tone: "text-orange-400", border: "border-orange-400/60" };
+  if (percentage >= 60) return { label: "Filling Fast", tone: "text-amber-400", border: "border-amber-400/60" };
+  return { label: "Available", tone: "text-green-400", border: "border-green-400/60" };
+};
+
+const getCategorySeatIds = (category) =>
+  category.rows.flatMap((row) =>
+    Array.from(
+      { length: category.seatsPerRow },
+      (_, index) => `${row}${index + 1}`
+    )
+  );
+
+const getCategoryAvailability = (bookedSeats, category) => {
+  const categorySeats = getCategorySeatIds(category);
+  const bookedSet = new Set(bookedSeats || []);
+  const bookedCount = categorySeats.filter((seat) =>
+    bookedSet.has(seat)
+  ).length;
+
+  return {
+    ...category,
+    ...getAvailability(bookedCount, categorySeats.length),
+    bookedCount,
+    totalSeats: categorySeats.length,
+  };
+};
+
+const getShowAvailability = (bookedSeats) => {
+  const categories = SEAT_CATEGORY_SUMMARY.map((category) =>
+    getCategoryAvailability(bookedSeats, category)
+  );
+  const bookedCount = categories.reduce(
+    (total, category) => total + category.bookedCount,
+    0
+  );
+  const totalSeats = categories.reduce(
+    (total, category) => total + category.totalSeats,
+    0
+  );
+  const allCategoriesSoldOut = categories.every(
+    (category) => category.bookedCount >= category.totalSeats
+  );
+
+  if (allCategoriesSoldOut) {
+    return {
+      ...getAvailability(totalSeats, totalSeats),
+      bookedCount,
+      totalSeats,
+      categories,
+    };
+  }
+
+  const showAvailability = getAvailability(bookedCount, totalSeats);
+
+  return {
+    ...showAvailability,
+    label:
+      showAvailability.label === "Sold Out"
+        ? "Few Seats Left"
+        : showAvailability.label,
+    bookedCount,
+    totalSeats,
+    categories,
+  };
+};
 
 const DetailBadge = ({ children }) => (
   <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-200">
@@ -36,10 +161,13 @@ const MovieDetails = () => {
   const { id } = useParams();
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [movie, setMovie] = useState(null);
 
   const [shows, setShows] = useState([]);
+  const [bookedSeatsByShow, setBookedSeatsByShow] = useState({});
+  const [selectedDate, setSelectedDate] = useState(toDateKey(new Date()));
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -80,6 +208,21 @@ const MovieDetails = () => {
         setMovie(normalizedMovie);
 
         setShows(normalizedShows || []);
+
+        const counts = await Promise.all(
+          (normalizedShows || []).map(async (show) => {
+            try {
+              const { data } = await API.get(`/bookings/booked-seats/${show._id}`);
+              return [show._id, Array.isArray(data) ? data : []];
+            } catch (error) {
+              return [show._id, []];
+            }
+          })
+        );
+
+        if (mounted) {
+          setBookedSeatsByShow(Object.fromEntries(counts));
+        }
       } catch (error) {
         console.error("Movie details error:", error);
 
@@ -103,7 +246,14 @@ const MovieDetails = () => {
   }, [id]);
 
   const groupedShows = useMemo(() => {
-    return shows.reduce((acc, show) => {
+    const now = Date.now();
+
+    return shows
+      .filter((show) => {
+        const startTime = new Date(show.startTime).getTime();
+        return startTime >= now && toDateKey(show.startTime) === selectedDate;
+      })
+      .reduce((acc, show) => {
       const cinemaName =
         show?.screen?.cinema?.name || "Unknown Cinema";
 
@@ -115,7 +265,7 @@ const MovieDetails = () => {
 
       return acc;
     }, {});
-  }, [shows]);
+  }, [selectedDate, shows]);
 
   const openSeatModal = (showId) => {
     setSelectedShowId(showId);
@@ -181,11 +331,18 @@ const MovieDetails = () => {
     );
   }
 
-  const genres = getMovieGenres(movie);
+  const categories = getMovieCategories(movie);
 
   const languages = getMovieLanguages(movie);
 
   const formats = getMovieFormats(movie);
+  const dateTabs = buildDateTabs();
+  const selectedLanguage = searchParams.get("language") || languages[0] || "";
+  const selectedFormat = searchParams.get("format") || formats[0] || "";
+  const visibleShowCount = Object.values(groupedShows).reduce(
+    (total, cinemaShows) => total + cinemaShows.length,
+    0
+  );
 
   return (
     <div className="min-h-screen bg-black text-white pb-20">
@@ -211,9 +368,9 @@ const MovieDetails = () => {
 
           <div className="max-w-4xl">
             <div className="flex flex-wrap gap-2 mb-5">
-              {genres.map((genre) => (
-                <DetailBadge key={genre}>
-                  {genre}
+              {categories.map((category) => (
+                <DetailBadge key={category}>
+                  {category}
                 </DetailBadge>
               ))}
             </div>
@@ -249,6 +406,12 @@ const MovieDetails = () => {
 
                 {languages.join(", ")}
               </span>
+
+              {selectedLanguage && selectedFormat && (
+                <span className="flex items-center gap-2 text-[#f5c518]">
+                  {selectedLanguage} - {selectedFormat}
+                </span>
+              )}
 
               <span className="flex items-center gap-2">
                 <Calendar
@@ -291,10 +454,32 @@ const MovieDetails = () => {
           <div className="h-px flex-1 bg-white/5" />
         </div>
 
-        {shows.length === 0 ? (
+        <div className="mb-8 flex gap-3 overflow-x-auto pb-2">
+          {dateTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setSelectedDate(tab.key)}
+              className={`min-w-[106px] rounded-2xl border px-4 py-3 text-center transition-all ${
+                selectedDate === tab.key
+                  ? "border-[#f5c518] bg-[#f5c518] text-black"
+                  : "border-white/10 bg-white/5 text-gray-300 hover:border-[#f5c518]/50"
+              }`}
+            >
+              <span className="block text-[10px] font-black uppercase tracking-widest">
+                {tab.label}
+              </span>
+              <span className="mt-1 block text-sm font-black uppercase">
+                {tab.date}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {visibleShowCount === 0 ? (
           <div className="rounded-[32px] border border-white/5 bg-[#121212] p-10 text-center">
             <p className="text-gray-400 font-bold">
-              No shows available right now
+              No shows available for this date
             </p>
           </div>
         ) : (
@@ -315,25 +500,52 @@ const MovieDetails = () => {
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    {cinemaShows.map((show) => (
-                      <button
-                        key={show._id}
-                        onClick={() => openSeatModal(show._id)}
-                        className="rounded-2xl border border-white/5 bg-white/5 px-4 py-5 text-center hover:border-[#f5c518]/50 hover:bg-[#f5c518]/10 transition-all active:scale-95"
-                      >
-                        <span className="block text-lg font-black">
-                          {new Date(show.startTime).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {cinemaShows.map((show) => {
+                      const availability = getShowAvailability(
+                        bookedSeatsByShow[show._id]
+                      );
+                      const isSoldOut = availability.label === "Sold Out";
 
-                        <span className="block mt-2 text-xs uppercase tracking-[0.3em] text-[#f5c518] font-bold">
-                          Select Seats
-                        </span>
-                      </button>
-                    ))}
+                      return (
+                        <button
+                          key={show._id}
+                          type="button"
+                          disabled={isSoldOut}
+                          onClick={() => openSeatModal(show._id)}
+                          className={`group relative rounded-2xl border bg-white/5 px-4 py-5 text-center transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${availability.border} hover:bg-[#f5c518]/10`}
+                        >
+                          <span className="block text-lg font-black">
+                            {new Date(show.startTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+
+                          <span className={`mt-2 block text-[10px] font-black uppercase tracking-widest ${availability.tone}`}>
+                            {availability.label}
+                          </span>
+
+                          <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 hidden w-64 -translate-x-1/2 rounded-2xl border border-[#f5c518]/20 bg-black p-4 text-left shadow-2xl group-hover:block">
+                            <div className="grid grid-cols-3 gap-3">
+                              {availability.categories.map((item) => (
+                                <div key={item.category}>
+                                  <p className="text-sm font-black text-white">
+                                    Rs.{item.price}
+                                  </p>
+                                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gray-300">
+                                    {item.category}
+                                  </p>
+                                  <p className={`mt-1 text-[10px] font-black uppercase ${item.tone}`}>
+                                    {item.label}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )

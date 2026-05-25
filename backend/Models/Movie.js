@@ -46,12 +46,6 @@ const movieSchema = new mongoose.Schema(
       type: String,
     },
 
-    genre: {
-      type: [String],
-      default: [],
-      index: true,
-    },
-
     language: {
       type: [String],
       default: ["English"],

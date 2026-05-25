@@ -10,6 +10,7 @@ exports.getShows = async (req, res) => {
 
     let query = {
       isActive: true,
+      startTime: { $gte: new Date() },
     };
 
     if (movieId) {
@@ -51,7 +52,11 @@ exports.getShows = async (req, res) => {
 // ===============================
 exports.getShowById = async (req, res) => {
   try {
-    const show = await Show.findById(req.params.id)
+    const show = await Show.findOne({
+      _id: req.params.id,
+      isActive: true,
+      startTime: { $gte: new Date() },
+    })
       .populate("movie")
       .populate({
         path: "screen",
@@ -62,7 +67,7 @@ exports.getShowById = async (req, res) => {
 
     if (!show) {
       return res.status(404).json({
-        message: "Show not found",
+        message: "Show not found or no longer available",
       });
     }
 
@@ -97,6 +102,12 @@ exports.addShow = async (req, res) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
         message: "Invalid date format",
+      });
+    }
+
+    if (start < new Date()) {
+      return res.status(400).json({
+        message: "Cannot create shows in the past",
       });
     }
 
@@ -174,9 +185,23 @@ exports.updateShow = async (req, res) => {
       });
     }
 
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return res.status(400).json({
+        message: "Invalid date format",
+      });
+    }
+
+    if (start < new Date()) {
+      return res.status(400).json({
+        message: "Cannot schedule shows in the past",
+      });
+    }
+
+    const screen = req.body.screen || currentShow.screen;
+
     const overlapping = await Show.findOne({
       _id: { $ne: showId },
-      screen: currentShow.screen,
+      screen,
       isActive: true,
       startTime: {
         $lt: end,

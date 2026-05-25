@@ -45,7 +45,7 @@ const BookingFailed = () => {
             </Link>
 
             <Link
-              to="/dashboard"
+              to="/bookings"
               className="btn-outline-gold !px-10 !py-4 text-sm flex items-center gap-2 justify-center uppercase tracking-widest"
             >
               <Home size={18} /> My Dashboard

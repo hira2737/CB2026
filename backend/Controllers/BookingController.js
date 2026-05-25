@@ -1,5 +1,6 @@
 const Booking = require("../Models/Booking");
 const SeatLock = require("../Models/SeatLock");
+const Show = require("../Models/Show");
 const razorpay = require("../config/RazorpayConfig");
 const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
@@ -28,6 +29,20 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
+      });
+    }
+
+    // VERIFY ACTIVE SHOW
+    const activeShow = await Show.findOne({
+      _id: showId,
+      isActive: true,
+      startTime: { $gte: new Date() },
+    });
+
+    if (!activeShow) {
+      return res.status(400).json({
+        success: false,
+        message: "Show is no longer available for booking",
       });
     }
 
@@ -405,6 +420,19 @@ exports.getBookingHistory = async (
 exports.getBookedSeats = async (req, res) => {
   try {
     const { showId } = req.params;
+
+    const activeShow = await Show.findOne({
+      _id: showId,
+      isActive: true,
+      startTime: { $gte: new Date() },
+    });
+
+    if (!activeShow) {
+      return res.status(404).json({
+        success: false,
+        message: "Show not found or no longer available",
+      });
+    }
 
     const confirmedBookings =
       await Booking.find({

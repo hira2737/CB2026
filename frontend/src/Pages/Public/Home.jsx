@@ -1,7 +1,7 @@
 // KEEP YOUR IMPORTS SAME
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import API from "../../config/api";
 import MovieCard from "../../Components/MovieCard";
 import Navbar from "../../Components/Navbar";
@@ -14,7 +14,6 @@ import SkeletonLoader from "../../Components/SkeletonLoader";
 import {
   DEFAULT_FORMATS,
   getMovieFormats,
-  getMovieGenres,
   getMovieLanguages,
   normalizeArrayResponse,
 } from "../../utils/movieFormatters";
@@ -47,9 +46,11 @@ const movieMatchesFilter = (movie, filters) => {
     ?.toLowerCase()
     .includes(filters.search.trim().toLowerCase());
 
-  const genreMatch =
-    filters.genre === "All" ||
-    getMovieGenres(movie).includes(filters.genre);
+  const categoryId =
+    typeof movie?.category === "object" ? movie.category?._id : movie?.category;
+
+  const categoryMatch =
+    filters.category === "All" || categoryId === filters.category;
 
   const languageMatch =
     filters.language === "All" ||
@@ -61,19 +62,20 @@ const movieMatchesFilter = (movie, filters) => {
 
   return (
     searchMatch &&
-    genreMatch &&
+    categoryMatch &&
     languageMatch &&
     formatMatch
   );
 };
 
-const movieGrid = (movies, activeMovieIds) => (
+const movieGrid = (movies, activeMovieIds, onSelectMovie) => (
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8">
     {movies.map((movie) => (
       <MovieCard
         key={movie._id}
         movie={movie}
         hasActiveShow={activeMovieIds.has(movie._id)}
+        onSelect={onSelectMovie}
       />
     ))}
   </div>
@@ -87,14 +89,20 @@ const EmptyState = () => (
 
 const Home = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [movies, setMovies] = useState([]);
   const [shows, setShows] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectionMovie, setSelectionMovie] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [selectedFormat, setSelectedFormat] = useState("");
 
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
-    genre: "All",
+    category: "All",
     language: "All",
     format: "All",
   });
@@ -102,9 +110,10 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [movieRes, showRes] = await Promise.all([
+        const [movieRes, showRes, categoryRes] = await Promise.all([
           API.get("/movies"),
           API.get("/shows"),
+          API.get("/categories"),
         ]);
 
         setMovies(
@@ -113,6 +122,10 @@ const Home = () => {
 
         setShows(
           normalizeArrayResponse(showRes.data, ["shows"])
+        );
+
+        setCategories(
+          normalizeArrayResponse(categoryRes.data, ["categories"])
         );
       } catch (error) {
         console.error(error);
@@ -123,6 +136,16 @@ const Home = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (location.pathname === "/movies") {
+      window.setTimeout(() => {
+        document
+          .getElementById("search-movies-section")
+          ?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [location.pathname]);
 
   const activeMovieIds = useMemo(() => {
     const now = Date.now();
@@ -141,12 +164,15 @@ const Home = () => {
   const filterConfig = useMemo(
     () => [
       {
-        key: "genre",
-        label: "Genre",
-        options: uniqueOptions(
-          movies.flatMap(getMovieGenres),
-          "All Genres"
-        ),
+        key: "category",
+        label: "Category",
+        options: [
+          emptyOption("All Categories"),
+          ...categories.map((category) => ({
+            label: category.name,
+            value: category._id,
+          })),
+        ],
       },
       {
         key: "language",
@@ -165,7 +191,7 @@ const Home = () => {
         ),
       },
     ],
-    [movies]
+    [categories, movies]
   );
 
   const filteredMovies = useMemo(
@@ -176,6 +202,26 @@ const Home = () => {
     [movies, filters]
   );
 
+  const openMovieSelection = (movie) => {
+    const languages = getMovieLanguages(movie);
+    const formats = getMovieFormats(movie);
+
+    setSelectionMovie(movie);
+    setSelectedLanguage(languages.length === 1 ? languages[0] : "");
+    setSelectedFormat(formats.length === 1 ? formats[0] : "");
+  };
+
+  const confirmMovieSelection = () => {
+    if (!selectionMovie || !selectedLanguage || !selectedFormat) return;
+
+    const params = new URLSearchParams({
+      language: selectedLanguage,
+      format: selectedFormat,
+    });
+
+    navigate(`/movie/${selectionMovie._id}?${params.toString()}`);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
@@ -183,7 +229,7 @@ const Home = () => {
       <HeroCarousel />
 
       <SectionWrapper
-        id="movies-section"
+        id="search-movies-section"
         eyebrow="Find your show"
         title="Search Movies"
       >
@@ -218,6 +264,7 @@ const Home = () => {
       </SectionWrapper>
 
       <SectionWrapper
+        id="now-showing-section"
         eyebrow="Fresh Arrivals"
         title="Now Showing"
         count={filteredMovies.length}
@@ -225,11 +272,81 @@ const Home = () => {
         {isLoading ? (
           <SkeletonLoader />
         ) : filteredMovies.length > 0 ? (
-          movieGrid(filteredMovies, activeMovieIds)
+          movieGrid(filteredMovies, activeMovieIds, openMovieSelection)
         ) : (
           <EmptyState />
         )}
       </SectionWrapper>
+
+      {selectionMovie && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-[28px] border border-[#f5c518]/20 bg-[#121212] p-6 sm:p-8 shadow-2xl">
+            <h2 className="text-2xl font-black uppercase tracking-tighter text-white">
+              {selectionMovie.title}
+            </h2>
+
+            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-gray-500">
+              Choose your show preference
+            </p>
+
+            <div className="mt-8 space-y-5">
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Language
+                </label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-sm font-bold text-white outline-none focus:border-[#f5c518]/60"
+                >
+                  <option value="">Select language</option>
+                  {getMovieLanguages(selectionMovie).map((language) => (
+                    <option key={language} value={language}>
+                      {language}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Format
+                </label>
+                <select
+                  value={selectedFormat}
+                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-sm font-bold text-white outline-none focus:border-[#f5c518]/60"
+                >
+                  <option value="">Select format</option>
+                  {getMovieFormats(selectionMovie).map((format) => (
+                    <option key={format} value={format}>
+                      {format === "Dolby" ? "Dolby Cinema" : format}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectionMovie(null)}
+                className="rounded-xl border border-white/10 px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-300 transition-colors hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmMovieSelection}
+                disabled={!selectedLanguage || !selectedFormat}
+                className="btn-fill-gold flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="border-t border-white/5 bg-[#050505] py-12">
         <div className="max-w-screen-2xl mx-auto px-5 md:px-12 flex flex-col md:flex-row justify-between gap-8">

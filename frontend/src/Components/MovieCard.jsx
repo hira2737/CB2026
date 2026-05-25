@@ -1,25 +1,25 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { Clock, Star } from "lucide-react";
 import {
   formatDuration,
   formatRating,
   getMovieFormats,
-  getMovieGenres,
+  getMovieCategories,
   getMovieLanguages,
   getMovieStatus,
 } from "../utils/movieFormatters";
 
-const MovieCard = ({ movie, hasActiveShow = false }) => {
-  const genres = getMovieGenres(movie);
+const MovieCard = ({ movie, hasActiveShow = false, onSelect }) => {
+  const categories = getMovieCategories(movie);
   const languages = getMovieLanguages(movie);
   const formats = getMovieFormats(movie);
   const status = getMovieStatus(movie, hasActiveShow);
 
   return (
-    <Link
-      to={`/movie/${movie._id}`}
-      className="group relative block transition-all duration-300 active:scale-95"
+    <button
+      type="button"
+      onClick={() => onSelect?.(movie)}
+      className="group relative block w-full text-left transition-all duration-300 active:scale-95"
     >
       <div className="aspect-[2/3] relative rounded-3xl overflow-hidden shadow-2xl bg-[#121212] border border-white/5 group-hover:border-[#f5c518]/60 group-hover:shadow-[0_0_35px_rgba(245,197,24,0.18)] transition-all duration-500">
         <img
@@ -61,12 +61,12 @@ const MovieCard = ({ movie, hasActiveShow = false }) => {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {genres.slice(0, 2).map((genre) => (
+            {categories.slice(0, 2).map((category) => (
               <span
-                key={genre}
+                key={category}
                 className="rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-gray-200"
               >
-                {genre}
+                {category}
               </span>
             ))}
           </div>
@@ -83,7 +83,7 @@ const MovieCard = ({ movie, hasActiveShow = false }) => {
           </div>
         </div>
       </div>
-    </Link>
+    </button>
   );
 };
 

@@ -60,6 +60,10 @@ const HeroCarousel = () => {
     }
   };
 
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section
       className="relative w-full min-h-[560px] h-[78svh] sm:h-[82svh] lg:h-[92vh] overflow-hidden bg-black"
@@ -110,20 +114,22 @@ const HeroCarousel = () => {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="#movies-section"
+            <button
+              type="button"
+              onClick={() => scrollToSection("now-showing-section")}
               className="btn-fill-gold inline-flex items-center gap-2"
             >
               <Ticket size={18} />
               Book Tickets
-            </a>
+            </button>
 
-            <a
-              href="#movies-section"
+            <button
+              type="button"
+              onClick={() => scrollToSection("search-movies-section")}
               className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:border-[#f5c518] hover:text-[#f5c518]"
             >
               View Details
-            </a>
+            </button>
           </div>
         </div>
       </div>

@@ -30,10 +30,10 @@ export const normalizeList = (value, fallback = []) => {
   return fallback;
 };
 
-export const getMovieGenres = (movie) => {
+export const getMovieCategories = (movie) => {
   const categoryName =
     typeof movie?.category === "object" ? movie.category?.name : movie?.category;
-  return normalizeList(movie?.genre, categoryName ? [categoryName] : []);
+  return categoryName ? [categoryName] : [];
 };
 
 export const getMovieLanguages = (movie) => {

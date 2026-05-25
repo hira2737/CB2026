@@ -436,7 +436,7 @@ const BookingSuccess = () => {
           </button>
 
           <Link
-            to="/dashboard"
+            to="/bookings"
             className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition"
           >
             <LayoutDashboard size={18} />
