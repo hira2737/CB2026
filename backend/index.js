@@ -11,70 +11,69 @@ const app = express();
 
 const PORT = process.env.PORT || 8080;
 
-// Database Connection
+// ── Database ─────────────────────────────
 DBConnect();
 
-// ── Security headers ─────────────────────────────────────
+// ── Security ─────────────────────────────
 app.use(helmet());
 
-// ── Body parsing ──────────────────────────────────────────
+// ── Body Parser ──────────────────────────
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// ── CORS FIX (FINAL PRODUCTION VERSION) ───────────────────
+// ── CORS (PRODUCTION SAFE) ───────────────
 const allowedOrigins = [
-  "https://cine-book-rho.vercel.app",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  process.env.FRONTEND_URL, // 👈 IMPORTANT FOR RENDER
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow Postman / server requests
+      // allow tools like Postman
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        !origin // fallback safety
+      ) {
         return callback(null, true);
       }
 
-      // TEMP SAFE MODE (prevents random CORS crash)
-      return callback(null, true);
+      console.log("Blocked by CORS:", origin);
+      return callback(null, false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
   })
 );
 
-// ── Rate limiters ─────────────────────────────────────────
+// ── Rate Limiting ────────────────────────
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: {
     success: false,
-    message: "Too many attempts. Please try again later.",
+    message: "Too many login attempts. Try again later.",
   },
 });
 
 const bookingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: {
     success: false,
-    message: "Too many requests. Slow down.",
+    message: "Too many booking requests. Slow down.",
   },
 });
 
-// Apply rate limiters
+// Apply limiters
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/bookings/initiate", bookingLimiter);
 app.use("/api/bookings/lock", bookingLimiter);
 
-// ── Routes ────────────────────────────────────────────────
+// ── Routes ───────────────────────────────
 const authRoutes = require("./Routes/AuthRoutes");
 const movieRoutes = require("./Routes/MovieRoutes");
 const showRoutes = require("./Routes/ShowRoutes");
@@ -87,11 +86,11 @@ const categoryRoutes = require("./Routes/CategoryRoutes");
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "CineBook API is running",
+    message: "CineBook API is running 🚀",
   });
 });
 
-// API routes
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/shows", showRoutes);
@@ -100,7 +99,7 @@ app.use("/api/cinemas", cinemaRoutes);
 app.use("/api/screens", screenRoutes);
 app.use("/api/categories", categoryRoutes);
 
-// ── 404 handler ───────────────────────────────────────────
+// ── 404 Handler ──────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -108,9 +107,9 @@ app.use((req, res) => {
   });
 });
 
-// ── Global error handler ──────────────────────────────────
+// ── Error Handler ────────────────────────
 app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
+  console.error("Error:", err);
 
   res.status(err.status || 500).json({
     success: false,
@@ -118,7 +117,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ── Start server ───────────────────────────────────────────
+// ── Start Server ─────────────────────────
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
