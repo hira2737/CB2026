@@ -1,177 +1,255 @@
-# 🎬 CineBook — Online Movie Ticket Booking System
+# CineBook - Production-Ready Movie Ticket Booking Platform
 
 <div align="center">
 
-[![Live Frontend](https://img.shields.io/badge/Frontend-Live%20on%20Vercel-black?style=for-the-badge&logo=vercel)](https://cine-book-rho.vercel.app/)
-[![Live Backend](https://img.shields.io/badge/Backend-Live%20on%20Render-orange?style=for-the-badge&logo=render)](https://cinebook-1-3jg1.onrender.com/)
-[![GitHub Repo](https://img.shields.io/badge/GitHub-hira2737%2FCineBook-181717?style=for-the-badge&logo=github)](https://github.com/hira2737/CineBook)
+[![Live Frontend](https://img.shields.io/badge/Frontend-Live%20on%20Vercel-black?style=for-the-badge&logo=vercel)](https://cb-2026-gamma.vercel.app/)
+[![Live Backend](https://img.shields.io/badge/Backend-Live%20on%20Render-orange?style=for-the-badge&logo=render)](https://cinebook-backend-s7ry.onrender.com/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-hira2737%2FCB2026-181717?style=for-the-badge&logo=github)](https://github.com/hira2737/CB2026)
 [![Stack](https://img.shields.io/badge/Stack-MERN-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/mern-stack)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-**A production-grade cinema ticket booking platform — browse movies, select seats in real-time, and pay securely via Razorpay.**
+Full-stack cinema booking system with smart seat booking, secure Razorpay payments, admin management, and production deployment on Vercel, Render, and MongoDB Atlas.
 
-[🌐 Live Demo](https://cine-book-rho.vercel.app/) · [⚙️ API](https://cinebook-1-3jg1.onrender.com/) · [📂 Repository](https://github.com/hira2737/CineBook)
+[Live Demo](https://cb-2026-gamma.vercel.app/) - [Backend API](https://cinebook-backend-s7ry.onrender.com/) - [Repository](https://github.com/hira2737/CB2026)
 
 </div>
 
 ---
 
-## 📌 About
+## About The Project
 
-**CineBook** is a full-stack movie ticket booking web application built with the **MERN stack**. It supports real-time concurrent seat locking, secure Razorpay payment with HMAC-SHA256 signature verification, Cloudinary image hosting, JWT authentication with role-based access, and a full admin dashboard — all deployed on Vercel + Render + MongoDB Atlas.
+**CineBook** is a production-style MERN stack movie ticket booking platform. It allows users to browse movies, choose show preferences, view available shows, select seats, complete payments through Razorpay, and manage booking history.
+
+The backend provides protected authentication, admin workflows, show scheduling, seat locking, payment verification, and booking APIs. The frontend is a responsive React/Vite application deployed on Vercel with React Router SPA refresh support.
 
 ---
 
-## 🚀 Live Links
+## Live Deployment
 
 | Service | URL |
-|---------|-----|
-| 🌐 Frontend (Vercel) | https://cine-book-rho.vercel.app/ |
-| ⚙️ Backend API (Render) | https://cinebook-1-3jg1.onrender.com/ |
+| --- | --- |
+| Frontend | https://cb-2026-gamma.vercel.app/ |
+| Backend API | https://cinebook-backend-s7ry.onrender.com/ |
+| Repository | https://github.com/hira2737/CB2026 |
 
-> **Note:** The backend is on Render's free tier. The first request after inactivity may take ~30 seconds to wake up.
-
----
-
-## ✨ Features
-
-### 👤 User
-- Browse movies with genre, language, and format filters
-- View movie details, trailers, and show timings grouped by cinema
-- Real-time seat selection with live seat-lock refresh (concurrent-safe)
-- Secure payment via **Razorpay** with server-side signature verification
-- Downloadable PDF ticket after booking
-- View full booking history
-
-### 🛠 Admin
-- Add, edit, and delete movies (with Cloudinary poster upload)
-- Manage cinemas, screens, and show schedules
-- Show overlap validation — prevents double-booking a screen
-- Manage movie categories
-- View all bookings across all users
-
-### 🔐 Security
-- JWT authentication with role-based access control (user / admin)
-- Razorpay HMAC-SHA256 payment signature verification
-- Helmet security headers
-- Rate limiting on auth and booking endpoints
-- Atomic seat locking (race-condition safe via MongoDB `findOneAndUpdate` + unique index)
+> Render free-tier note: the backend may sleep after inactivity. The first request after a pause can take 30-50 seconds while the service wakes up.
 
 ---
 
-## ⚙️ Tech Stack
+## Major Features
+
+### User Features
+
+- Browse current movies in a responsive interface
+- Filter movies by category, language, and format
+- Select language and format before choosing show slots
+- View movie details, cinema grouping, and date-based show slots
+- View occupancy-based slot labels such as Available, Filling Fast, Almost Full, Few Seats Left, and Sold Out
+- Select seats with smart automatic seat selection
+- Live booked-seat refresh during seat selection
+- Secure Razorpay checkout flow
+- Booking success and failure pages
+- User booking history
+- Mobile, tablet, and desktop support
+
+### Admin Features
+
+- Admin dashboard overview
+- Add, edit, and delete movies
+- Cloudinary poster upload support
+- Manage categories
+- Create cinemas and screens
+- Create show timings
+- Prevent overlapping shows for the same screen
+- Prevent past show creation
+- View bookings across users
+- Hide expired shows from active show views while preserving booking history
+
+### Security Features
+
+- JWT authentication
+- Protected user routes
+- Protected admin routes
+- Password hashing with bcrypt
+- Helmet security middleware
+- Express rate limiting
+- Production CORS configuration
+- Razorpay HMAC-SHA256 signature verification
+- MongoDB-backed seat locking to reduce race conditions
+- Environment-variable driven deployment configuration
+
+---
+
+## Latest Production Updates
+
+- Frontend deployed on Vercel
+- Backend deployed on Render
+- MongoDB Atlas production database support
+- React Router refresh fallback configured for Vercel
+- Production API base URL configured through `VITE_API_URL`
+- Expired shows hidden from public and admin active show views
+- Category-based movie filtering
+- Date-based show tabs
+- Per-category slot availability tooltip behavior
+- Responsive navigation and booking pages
+
+---
+
+## Smart Seat Booking System
+
+CineBook includes a smart seat booking workflow designed to reduce double booking and improve booking clarity.
+
+- Users choose the number of seats before entering the seat map
+- The seat map auto-selects available seats to the right from the clicked seat
+- Booked seats and temporary locks are refreshed during seat selection
+- Seats are locked before payment order creation
+- Confirmed bookings permanently reserve seats
+- Expired or conflicting locks do not proceed to payment
+
+### Seat Category Pricing
+
+| Category | Rows | Price |
+| --- | --- | --- |
+| PLATINUM | A-B | INR 360 |
+| GOLD | C-F | INR 270 |
+| SILVER | G-J | INR 180 |
+
+Each category has independent availability. A show is considered sold out only when all seat categories are fully booked.
+
+---
+
+## Razorpay Integration
+
+CineBook uses Razorpay for secure payment processing.
+
+1. User selects seats
+2. Backend locks seats temporarily
+3. Backend creates a Razorpay order
+4. Frontend opens Razorpay checkout
+5. User completes or cancels payment
+6. Backend verifies the Razorpay signature
+7. Booking is confirmed only after successful verification
+8. Failed payments are marked safely without deleting booking history
+
+Test mode credentials can be used in local development through Razorpay test keys.
+
+---
+
+## Deployment Architecture
+
+```text
+User Browser
+     |
+     v
+Vercel Frontend (React + Vite)
+     |
+     v
+Render Backend (Node.js + Express)
+     |
+     v
+MongoDB Atlas
+
+Supporting services:
+- Razorpay for payments
+- Cloudinary for poster storage
+- Nodemailer for email notifications
+```
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, Vite, Tailwind CSS v4, Axios, React Router v7 |
-| Backend | Node.js, Express 5 |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS v4 |
+| Routing | React Router v7 |
+| API Client | Axios |
+| Backend | Node.js, Express.js |
 | Database | MongoDB Atlas, Mongoose |
-| Auth | JSON Web Tokens (JWT), bcrypt |
-| Payments | Razorpay (INR, test + live mode) |
-| Storage | Cloudinary (movie posters) |
-| Email | Nodemailer (booking confirmations) |
-| Security | Helmet, express-rate-limit |
-| Deployment | Vercel (frontend), Render (backend), MongoDB Atlas (database) |
+| Authentication | JWT, bcrypt |
+| Payments | Razorpay |
+| Media Storage | Cloudinary |
+| Email | Nodemailer |
+| Security | Helmet, express-rate-limit, CORS |
+| Deployment | Vercel, Render |
 
 ---
 
-## 🏗 Project Structure
-
-```
-CineBook/
-├── backend/
-│   ├── config/
-│   │   ├── CloudinaryConfig.js     # Multer + Cloudinary storage
-│   │   ├── DBConfig.js             # MongoDB Atlas connection
-│   │   └── RazorpayConfig.js       # Razorpay instance
-│   ├── Controllers/
-│   │   ├── BookingController.js    # Order creation, payment verification
-│   │   ├── MovieController.js      # Movie CRUD
-│   │   ├── ShowController.js       # Show scheduling + overlap check
-│   │   ├── SeatLockController.js   # Atomic seat locking (race-safe)
-│   │   ├── CinemaController.js     # Cinema CRUD + cascade delete
-│   │   ├── ScreenController.js     # Screen management
-│   │   ├── CategoryController.js   # Category CRUD
-│   │   └── UserController.js       # Auth (register, login, profile)
-│   ├── Middlewares/
-│   │   └── AuthMiddleware.js       # JWT verify + admin role guard
-│   ├── Models/                     # Mongoose schemas
-│   │   ├── Booking.js
-│   │   ├── Movie.js
-│   │   ├── Show.js
-│   │   ├── Screen.js
-│   │   ├── Cinema.js
-│   │   ├── SeatLock.js             # TTL-indexed for auto-expiry
-│   │   ├── Category.js
-│   │   └── User.js
-│   ├── Routes/                     # Express routers
-│   ├── Services/
-│   │   └── EmailService.js         # Booking confirmation emails
-│   ├── index.js                    # App entry — CORS, Helmet, rate limiter
-│   └── package.json
-│
-└── frontend/
-    ├── src/
-    │   ├── Components/             # Navbar, MovieCard, HeroCarousel, etc.
-    │   ├── Pages/
-    │   │   ├── Public/             # Home, MovieDetails, SeatSelection, Booking
-    │   │   ├── Admin/              # Full admin dashboard
-    │   │   └── User/               # User booking history
-    │   ├── config/
-    │   │   └── api.js              # Axios instance with auth interceptor
-    │   └── utils/
-    │       └── movieFormatters.js  # Shared formatting helpers
-    ├── vite.config.js
-    └── package.json
-```
-
----
-
-## 🔄 Booking Flow
-
-```
-Select Seats
-     │
-     ▼
-Lock Seats (5-min TTL, atomic)
-     │
-     ▼
-Create Razorpay Order  ──► Backend saves pending Booking
-     │
-     ▼
-Razorpay Checkout Modal (frontend)
-     │
-     ▼
-User Pays
-     │
-     ▼
-Verify HMAC-SHA256 Signature  ──► Confirm Booking in DB
-     │
-     ▼
-Release Seat Lock + Send Email
-     │
-     ▼
-PDF Ticket Download
-```
-
----
-
-## 🛠 Local Setup
-
-### Prerequisites
-- Node.js v18+
-- MongoDB (local or Atlas)
-- Razorpay account (test keys)
-- Cloudinary account (free tier)
-
-### 1. Clone the repo
+## Project Structure
 
 ```bash
-git clone https://github.com/hira2737/CineBook.git
-cd CineBook
+CB2026/
+|-- backend/
+|   |-- config/
+|   |-- Controllers/
+|   |-- Middlewares/
+|   |-- Models/
+|   |-- Routes/
+|   |-- Services/
+|   |-- index.js
+|   `-- package.json
+|
+|-- frontend/
+|   |-- src/
+|   |   |-- Components/
+|   |   |-- Pages/
+|   |   |-- config/
+|   |   |-- utils/
+|   |   `-- App.jsx
+|   |-- vercel.json
+|   |-- vite.config.js
+|   `-- package.json
+|
+`-- README.md
 ```
 
-### 2. Backend setup
+---
+
+## Booking Flow
+
+```text
+Browse Movie
+     |
+Choose Language and Format
+     |
+Select Date and Show Slot
+     |
+Choose Seat Count
+     |
+Select Seats
+     |
+Lock Seats Temporarily
+     |
+Create Razorpay Order
+     |
+Complete Payment
+     |
+Verify Payment Signature
+     |
+Confirm Booking
+     |
+Show Booking Result
+```
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas or local MongoDB
+- Razorpay test account
+- Cloudinary account
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/hira2737/CB2026.git
+cd CB2026
+```
+
+### 2. Backend Setup
 
 ```bash
 cd backend
@@ -182,173 +260,202 @@ Create `backend/.env`:
 
 ```env
 PORT=8080
-
-MONGODB_URI=mongodb://127.0.0.1:27017/cinebook_db
-
-# Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET=your_64_char_hex_secret
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
 
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:8080
 
-RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
-RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_16_char_app_password
+MAIL_PASSWORD=your_app_password
 MAIL_FROM_NAME=CineBook
 MAIL_FROM_ADDRESS=noreply@cinebook.com
 ADMIN_EMAIL=admin@cinebook.com
 ```
 
+Run backend:
+
 ```bash
-npm run dev       # Start backend on :8080
-npm run seed      # (Optional) seed sample data
+npm run dev
 ```
 
-### 3. Frontend setup
+### 3. Frontend Setup
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
 ```
 
 Create `frontend/.env`:
 
 ```env
-VITE_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:8080
 ```
+
+Run frontend:
 
 ```bash
-npm run dev       # Start frontend on :5173
+npm run dev
 ```
 
-Open `http://localhost:5173`
+Open `http://localhost:5173`.
 
 ---
 
-## 🔧 Environment Variables Reference
+## Environment Variables
 
 ### Backend
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Server port (default 8080) |
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Backend server port |
 | `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Secret for signing JWTs (min 64 chars) |
-| `FRONTEND_URL` | Allowed CORS origin (comma-separated for multiple) |
-| `RAZORPAY_KEY_ID` | Razorpay API key ID |
-| `RAZORPAY_KEY_SECRET` | Razorpay API key secret |
+| `JWT_SECRET` | JWT signing secret |
+| `FRONTEND_URL` | Allowed frontend origin |
+| `BACKEND_URL` | Backend public URL |
+| `RAZORPAY_KEY_ID` | Razorpay key ID |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-| `MAIL_USERNAME` | Gmail address for sending emails |
-| `MAIL_PASSWORD` | Gmail App Password (not your login password) |
+| `MAIL_HOST` | SMTP host |
+| `MAIL_PORT` | SMTP port |
+| `MAIL_USERNAME` | SMTP username |
+| `MAIL_PASSWORD` | SMTP password or app password |
+| `MAIL_FROM_NAME` | Sender display name |
+| `MAIL_FROM_ADDRESS` | Sender email address |
+| `ADMIN_EMAIL` | Admin notification email |
 
 ### Frontend
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API base URL |
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Backend base URL without `/api` |
+
+Production frontend value:
+
+```env
+VITE_API_URL=https://cinebook-backend-s7ry.onrender.com
+```
+
+The Axios client appends `/api` internally.
 
 ---
 
-## 🚀 Deployment
+## Deployment Guide
 
-### Backend → Render
-1. Connect GitHub repo → New Web Service
-2. **Root Directory:** `backend`
-3. **Build Command:** `npm install`
-4. **Start Command:** `node index.js`
-5. Add all environment variables from the table above
-6. Set `FRONTEND_URL` to your Vercel URL
+### Backend on Render
 
-### Frontend → Vercel
-1. Connect GitHub repo → New Project
-2. **Root Directory:** `frontend`
-3. **Build Command:** `npm run build`
-4. **Output Directory:** `dist`
-5. Add `VITE_API_URL=https://your-backend.onrender.com/api`
+| Setting | Value |
+| --- | --- |
+| Root Directory | `backend` |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
 
-### Database → MongoDB Atlas
-1. Create free M0 cluster at [mongodb.com/atlas](https://www.mongodb.com/cloud/atlas)
-2. Database Access → create user with password
-3. Network Access → allow `0.0.0.0/0`
-4. Copy the connection string into `MONGODB_URI`
+Required production environment values:
 
----
+```env
+PORT=8080
+MONGODB_URI=your_production_mongodb_connection_string
+JWT_SECRET=your_production_jwt_secret
+FRONTEND_URL=https://cb-2026-gamma.vercel.app
+BACKEND_URL=https://cinebook-backend-s7ry.onrender.com
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+```
 
-## 💳 Payment Integration (Razorpay)
+### Frontend on Vercel
 
-This project uses **Razorpay(Test Mode)** for secure payment processing during movie ticket booking.
+| Setting | Value |
+| --- | --- |
+| Root Directory | `frontend` |
+| Framework | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
 
----
+Required production environment value:
 
-### 🔐 Payment Flow
+```env
+VITE_API_URL=https://cinebook-backend-s7ry.onrender.com
+```
 
-1. User selects seats → seats are temporarily locked (TTL-based)
-2. Booking is created with **PENDING** status
-3. Razorpay order is generated from backend
-4. User completes payment via Razorpay checkout
-5. Backend verifies payment using **HMAC-SHA256 signature verification**
-6. On success:
-   - Booking is marked as **CONFIRMED**
-   - Seats are permanently reserved
-7. On failure/cancel:
-   - Booking is marked as **FAILED**
-   - Seat locks are automatically released
+The frontend includes `frontend/vercel.json` with an SPA rewrite:
 
----
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
 
-## 🏦 Supported Payment Methods
-
-Razorpay checkout supports multiple methods depending on configuration:
-
-- 🏛️ Net Banking
-- 📱 UPI Payments
-
----
-
-## 🧪 Test Credentials (Razorpay Test Mode)
-
-### 📱 UPI
-- Success: `success@razorpay`
-- Failure: `failure@razorpay`
+This prevents Vercel 404 errors when users refresh routes such as `/login`, `/admin`, `/movie/:id`, and booking pages.
 
 ---
 
-## 📚 What I Learned
+## Production Deployment Notes
 
-- Building a production MERN stack application end-to-end
-- JWT authentication and role-based access control
-- Preventing race conditions with MongoDB atomic operations (`findOneAndUpdate` + unique indexes)
-- Secure payment integration with HMAC-SHA256 signature verification
-- Cloud storage (Cloudinary) and CDN-hosted assets
-- CORS configuration for cross-origin deployments
-- Production deployment on Vercel + Render + MongoDB Atlas
-
----
-
-## 👨‍💻 Author
-
-**Hira** · [@hira2737](https://github.com/hira2737)
+- Do not include `/api` in `VITE_API_URL`; the frontend Axios instance adds it.
+- Keep `FRONTEND_URL` on Render aligned with the deployed Vercel domain.
+- Keep Razorpay secrets only in backend environment variables.
+- Keep Cloudinary credentials only in backend environment variables.
+- Vercel must use the `frontend` directory as the project root.
+- Render must use the `backend` directory as the service root.
+- The Render free tier can sleep after inactivity, so the first API call may be slower.
 
 ---
 
-## ⭐ Support
+## What I Learned
 
-If you found this project useful:
+- Building a full MERN application with separate frontend and backend deployments
+- Managing production environment variables safely
+- Handling React Router SPA refresh behavior on Vercel
+- Designing protected user and admin workflows
+- Implementing secure Razorpay payment verification
+- Reducing seat booking race conditions with backend seat locks
+- Connecting MongoDB Atlas to a production Express API
+- Managing media uploads through Cloudinary
+- Debugging real deployment issues such as CORS, API URLs, and route rewrites
 
-- ⭐ **Star** the repository
-- 🍴 **Fork** it for your own learning
-- 🐛 Open an **issue** if you find a bug
+---
+
+## Author
+
+**Hira**
+
+- GitHub: https://github.com/hira2737
+- Repository: https://github.com/hira2737/CB2026
+
+---
+
+## Support
+
+If this project is useful:
+
+- Star the repository
+- Fork it for learning or extension
+- Open an issue for bugs or suggestions
+- Share it with other developers
 
 ---
 
 <div align="center">
-Built with ❤️ using the MERN Stack
+
+Built with the MERN stack for a production-style movie booking experience.
+
 </div>
