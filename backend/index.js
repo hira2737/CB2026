@@ -11,101 +11,60 @@ const app = express();
 
 const PORT = process.env.PORT || 8080;
 
-// ─────────────────────────────────────────────
-// DATABASE
-// ─────────────────────────────────────────────
+// ── Database ─────────────────────────────
 DBConnect();
 
-// ─────────────────────────────────────────────
-// SECURITY
-// ─────────────────────────────────────────────
+// ── Security ─────────────────────────────
 app.use(helmet());
 
-// ─────────────────────────────────────────────
-// BODY PARSER
-// ─────────────────────────────────────────────
+// ── Body Parser ──────────────────────────
 app.use(express.json({ limit: "10kb" }));
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "10kb",
-  })
-);
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// ─────────────────────────────────────────────
-// CORS (FINAL PRODUCTION VERSION)
-// ─────────────────────────────────────────────
+// ── CORS (PRODUCTION SAFE) ───────────────
+
 const allowedOrigins = [
+  "https://cb-2026-gamma.vercel.app",
   "http://localhost:5173",
-  process.env.FRONTEND_URL,
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow Postman / server-to-server requests
-      if (!origin) {
-        return callback(null, true);
-      }
+      // allow tools like Postman
+      if (!origin) return callback(null, true);
 
-      // Allow localhost
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // Allow all Vercel deployments
-      if (origin.endsWith(".vercel.app")) {
+      if (
+        allowedOrigins.includes(origin) ||
+        !origin // fallback safety
+      ) {
         return callback(null, true);
       }
 
       console.log("Blocked by CORS:", origin);
-
-      return callback(
-        new Error("Not allowed by CORS")
-      );
+      return callback(null, false);
     },
-
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "DELETE",
-      "PATCH",
-      "OPTIONS",
-    ],
-
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
   })
 );
 
-// ─────────────────────────────────────────────
-// RATE LIMITERS
-// ─────────────────────────────────────────────
+// ── Rate Limiting ────────────────────────
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-
-  standardHeaders: true,
-  legacyHeaders: false,
-
   message: {
     success: false,
-    message:
-      "Too many login attempts. Try again later.",
+    message: "Too many login attempts. Try again later.",
   },
 });
 
 const bookingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
-
-  standardHeaders: true,
-  legacyHeaders: false,
-
   message: {
     success: false,
-    message:
-      "Too many booking requests. Slow down.",
+    message: "Too many booking requests. Slow down.",
   },
 });
 
@@ -115,9 +74,7 @@ app.use("/api/auth/register", authLimiter);
 app.use("/api/bookings/initiate", bookingLimiter);
 app.use("/api/bookings/lock", bookingLimiter);
 
-// ─────────────────────────────────────────────
-// ROUTES
-// ─────────────────────────────────────────────
+// ── Routes ───────────────────────────────
 const authRoutes = require("./Routes/AuthRoutes");
 const movieRoutes = require("./Routes/MovieRoutes");
 const showRoutes = require("./Routes/ShowRoutes");
@@ -143,9 +100,7 @@ app.use("/api/cinemas", cinemaRoutes);
 app.use("/api/screens", screenRoutes);
 app.use("/api/categories", categoryRoutes);
 
-// ─────────────────────────────────────────────
-// 404 HANDLER
-// ─────────────────────────────────────────────
+// ── 404 Handler ──────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -153,24 +108,17 @@ app.use((req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────
-// GLOBAL ERROR HANDLER
-// ─────────────────────────────────────────────
+// ── Error Handler ────────────────────────
 app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
+  console.error("Error:", err);
 
   res.status(err.status || 500).json({
     success: false,
-    message:
-      err.message || "Internal Server Error",
+    message: err.message || "Internal Server Error",
   });
 });
 
-// ─────────────────────────────────────────────
-// START SERVER
-// ─────────────────────────────────────────────
+// ── Start Server ─────────────────────────
 app.listen(PORT, () => {
-  console.log(
-    `Server is running on port ${PORT}`
-  );
+  console.log(`Server running on port ${PORT}`);
 });
