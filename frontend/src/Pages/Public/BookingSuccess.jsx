@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
 import {
   CheckCircle2,
@@ -47,6 +47,7 @@ const fitText = (pdf, text, maxWidth, fontSize) => {
 };
 
 const BookingSuccess = () => {
+  const { bookingId } = useParams();
   const [searchParams] = useSearchParams();
   const tran_id = searchParams.get("tran_id");
 
@@ -56,13 +57,16 @@ const BookingSuccess = () => {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        if (!tran_id) return;
+        if (!bookingId && !tran_id) {
+          setBooking(null);
+          return;
+        }
 
-        const { data } = await API.get(
-          `/bookings/transaction/${tran_id}`
-        );
+        const { data } = bookingId
+          ? await API.get(`/bookings/${bookingId}`)
+          : await API.get(`/bookings/transaction/${tran_id}`);
 
-        setBooking(data);
+        setBooking(data.booking || data);
       } catch (error) {
         console.error("Failed to fetch booking:", error);
         toast.error("Failed to load booking details");
@@ -72,7 +76,7 @@ const BookingSuccess = () => {
     };
 
     fetchBooking();
-  }, [tran_id]);
+  }, [bookingId, tran_id]);
 
   // ============================================
   // DOWNLOAD PDF TICKET

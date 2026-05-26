@@ -8,6 +8,7 @@ const {
   getBookingHistory,
   getBookedSeats,
   getAllBookings,
+  getBookingById,
   getBookingByTransactionId,
 } = require("../Controllers/BookingController");
 
@@ -37,5 +38,8 @@ router.get("/all", authMiddleware, adminMiddleware, getAllBookings);
 router.get("/booked-seats/:showId", getBookedSeats);
 router.post("/lock", authMiddleware, lockSeats);
 router.delete("/lock/:id", authMiddleware, unlockSeats);
+
+// ================= SINGLE BOOKING =================
+router.get("/:bookingId", authMiddleware, getBookingById);
 
 module.exports = router;

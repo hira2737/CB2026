@@ -1,6 +1,7 @@
 const Booking = require("../Models/Booking");
 const SeatLock = require("../Models/SeatLock");
 const Show = require("../Models/Show");
+const mongoose = require("mongoose");
 const razorpay = require("../config/RazorpayConfig");
 const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
@@ -168,6 +169,7 @@ exports.verifyPayment = async (req, res) => {
     ) {
       return res.json({
         success: true,
+        bookingId: existingBooking._id,
         transactionId: existingBooking.transactionId,
       });
     }
@@ -279,6 +281,7 @@ exports.verifyPayment = async (req, res) => {
 
     return res.json({
       success: true,
+      bookingId: booking._id,
       transactionId: booking.transactionId,
     });
   } catch (err) {
@@ -287,6 +290,79 @@ exports.verifyPayment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Verification failed",
+    });
+  }
+};
+
+// ======================================================
+// GET BOOKING BY ID
+// ======================================================
+exports.getBookingById = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("user", "name email role")
+      .populate({
+        path: "show",
+        populate: [
+          {
+            path: "movie",
+            populate: {
+              path: "category",
+            },
+          },
+          {
+            path: "screen",
+            populate: {
+              path: "cinema",
+            },
+          },
+        ],
+      });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    const isOwner =
+      booking.user?._id?.toString() === req.user.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this booking",
+      });
+    }
+
+    return res.json({
+      success: true,
+      booking,
+    });
+  } catch (err) {
+    console.error("getBookingById error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch booking",
     });
   }
 };
@@ -330,6 +406,17 @@ exports.getBookingByTransactionId = async (
       return res.status(404).json({
         success: false,
         message: "Booking not found",
+      });
+    }
+
+    const isOwner =
+      booking.user?._id?.toString() === req.user.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this booking",
       });
     }
 

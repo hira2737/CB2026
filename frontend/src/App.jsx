@@ -48,6 +48,14 @@ function App() {
           }
         />
         <Route
+          path="/booking/success/:bookingId"
+          element={
+            <ProtectedRoute>
+              <BookingSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/booking/failed"
           element={
             <ProtectedRoute>

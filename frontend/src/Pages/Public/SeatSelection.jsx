@@ -363,7 +363,9 @@ const SeatSelection = () => {
             );
 
             navigate(
-              `/booking/success?tran_id=${verifyRes.data.transactionId}`
+              verifyRes.data.bookingId
+                ? `/booking/success/${verifyRes.data.bookingId}`
+                : `/booking/success?tran_id=${verifyRes.data.transactionId}`
             );
           } catch (err) {
             console.error(err);
