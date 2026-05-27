@@ -277,7 +277,7 @@ const BookingSuccess = () => {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <div className="flex flex-col items-center justify-center py-24 px-6">
+      <div className="flex flex-col items-center justify-center py-28 sm:py-24 px-4 sm:px-6">
         {/* Success Icon */}
 
         <div className="flex flex-col items-center mb-10">
@@ -288,7 +288,7 @@ const BookingSuccess = () => {
             />
           </div>
 
-          <h1 className="text-5xl font-black text-center mb-4">
+          <h1 className="text-4xl sm:text-5xl font-black text-center mb-4">
             Booking Confirmed
           </h1>
 
@@ -303,24 +303,24 @@ const BookingSuccess = () => {
         <div className="w-full max-w-2xl bg-[#111111] border border-yellow-500/20 rounded-3xl overflow-hidden shadow-2xl">
           {/* Header */}
 
-          <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 px-8 py-6 text-black">
-            <div className="flex justify-between items-center">
-              <div>
+          <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 px-5 sm:px-8 py-6 text-black">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="min-w-0">
                 <p className="text-sm font-bold uppercase">
                   CINEBOOK Ticket
                 </p>
 
-                <h2 className="text-3xl font-black mt-1">
+                <h2 className="text-2xl sm:text-3xl font-black mt-1 break-words">
                   {booking?.show?.movie?.title}
                 </h2>
               </div>
 
-              <div className="text-right">
+              <div className="min-w-0 sm:text-right">
                 <p className="text-xs font-semibold">
                   Transaction ID
                 </p>
 
-                <p className="font-black">
+                <p className="font-black break-all">
                   {booking?.transactionId}
                 </p>
               </div>
@@ -329,14 +329,14 @@ const BookingSuccess = () => {
 
           {/* Body */}
 
-          <div className="p-8 grid md:grid-cols-2 gap-8">
+          <div className="p-5 sm:p-8 grid md:grid-cols-2 gap-8">
             <div className="space-y-5">
               <div>
                 <p className="text-sm text-gray-400">
                   Cinema
                 </p>
 
-                <p className="font-bold text-lg">
+                <p className="font-bold text-lg break-words">
                   {
                     booking?.show?.screen?.cinema
                       ?.name
@@ -349,7 +349,7 @@ const BookingSuccess = () => {
                   Address
                 </p>
 
-                <p>
+                <p className="break-words">
                   {
                     booking?.show?.screen?.cinema
                       ?.address
@@ -422,10 +422,10 @@ const BookingSuccess = () => {
 
         {/* Buttons */}
 
-        <div className="mt-10 flex flex-wrap justify-center gap-5">
+        <div className="mt-10 flex w-full flex-wrap justify-center gap-5">
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-yellow-500 text-black font-bold hover:bg-yellow-400 transition"
+            className="flex w-full items-center justify-center gap-2 px-6 py-3 rounded-xl bg-yellow-500 text-black font-bold hover:bg-yellow-400 transition sm:w-auto"
           >
             <Download size={18} />
             Download Ticket
@@ -433,7 +433,7 @@ const BookingSuccess = () => {
 
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition"
+            className="flex w-full items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition sm:w-auto"
           >
             <Share2 size={18} />
             Share
@@ -441,7 +441,7 @@ const BookingSuccess = () => {
 
           <Link
             to="/bookings"
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition"
+            className="flex w-full items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition sm:w-auto"
           >
             <LayoutDashboard size={18} />
             Dashboard

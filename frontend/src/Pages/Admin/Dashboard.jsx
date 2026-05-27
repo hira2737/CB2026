@@ -29,9 +29,9 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-[#121212] w-full max-w-xl rounded-[28px] sm:rounded-[40px] border border-white/5 p-6 sm:p-12 relative shadow-2xl overflow-y-auto max-h-[90vh]">
-        <h2 className="text-3xl font-black uppercase tracking-tighter text-[#f5c518] mb-8">
+        <h2 className="pr-10 text-2xl sm:text-3xl font-black uppercase tracking-tighter text-[#f5c518] mb-8 break-words">
           {title}
         </h2>
 
@@ -711,7 +711,7 @@ const AdminDashboard = () => {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-[#121212] p-8 rounded-[32px] border border-white/5 flex items-center gap-6 group hover:border-white/10 transition-all"
+            className="bg-[#121212] p-5 sm:p-8 rounded-[32px] border border-white/5 flex items-center gap-6 group hover:border-white/10 transition-all"
           >
             <div
               className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center`}
@@ -733,7 +733,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-8 xl:col-span-2">
+        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-5 sm:p-8 xl:col-span-2">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-black uppercase tracking-tighter">
               Booking Trends
@@ -765,7 +765,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-8">
+        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-5 sm:p-8">
           <h2 className="text-xl font-black uppercase tracking-tighter mb-8">
             Booking Analytics
           </h2>
@@ -788,7 +788,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-8 xl:col-span-3">
+        <div className="bg-[#121212] rounded-[32px] border border-white/5 p-5 sm:p-8 xl:col-span-3">
           <h2 className="text-xl font-black uppercase tracking-tighter mb-8">
             Revenue Analytics
           </h2>
@@ -963,7 +963,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-black text-white pb-24 font-heading">
       <Navbar />
 
-      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 pt-32">
+      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 pt-36 md:pt-32">
         <header className="mb-12">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-normal mb-3">
             Admin <span className="text-[#f5c518]">Dashboard</span>

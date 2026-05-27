@@ -65,14 +65,14 @@ const Dashboard = () => {
       <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 pt-36 md:pt-32 pb-24 flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Sidebar - Profile */}
         <aside className="w-full lg:w-96 shrink-0">
-          <div className="bg-[#1a1a1a] rounded-[40px] p-10 border border-white/10 lg:sticky lg:top-32 relative overflow-hidden">
+          <div className="bg-[#1a1a1a] rounded-[32px] sm:rounded-[40px] p-6 sm:p-10 border border-white/10 lg:sticky lg:top-32 relative overflow-hidden">
             {!isEditing ? (
               <>
                 <div className="flex flex-col items-center text-center mb-10">
-                  <div className="w-32 h-32 bg-[#f5c518] rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-[#f5c518]/20">
-                    <User size={64} className="text-black" />
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#f5c518] rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-[#f5c518]/20">
+                    <User size={56} className="text-black" />
                   </div>
-                  <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-2 break-words">
                     {user.name}
                   </h2>
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">
@@ -86,7 +86,7 @@ const Dashboard = () => {
 
                 <div className="space-y-6 pt-10 border-t border-white/5">
                   <div className="flex items-center gap-4 group">
-                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-500 group-hover:text-[#f5c518] transition-colors">
+                    <div className="w-10 h-10 shrink-0 bg-white/5 rounded-xl flex items-center justify-center text-gray-500 group-hover:text-[#f5c518] transition-colors">
                       <Mail size={18} />
                     </div>
                     <p className="text-sm font-bold text-gray-400 truncate">
@@ -186,7 +186,7 @@ const Dashboard = () => {
             {bookings.map((booking) => (
               <div
                 key={booking._id}
-                className="group bg-[#1a1a1a] rounded-[40px] p-8 border border-white/10 hover:border-[#f5c518]/30 transition-all flex flex-col md:flex-row gap-8 relative overflow-hidden active:scale-[0.99]"
+                className="group bg-[#1a1a1a] rounded-[32px] sm:rounded-[40px] p-5 sm:p-8 border border-white/10 hover:border-[#f5c518]/30 transition-all flex flex-col md:flex-row gap-8 relative overflow-hidden active:scale-[0.99]"
               >
                 {/* Poster on Card */}
                 <div className="w-full md:w-32 h-44 shrink-0 rounded-2xl overflow-hidden shadow-2xl">
@@ -201,11 +201,11 @@ const Dashboard = () => {
                 </div>
 
                 {/* Details */}
-                <div className="flex-1 flex flex-col justify-between">
+                <div className="min-w-0 flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
-                      <div>
-                        <h3 className="text-2xl font-black uppercase tracking-tighter text-white group-hover:text-[#f5c518] transition-colors mb-1 truncate max-w-sm">
+                      <div className="min-w-0">
+                        <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tighter text-white group-hover:text-[#f5c518] transition-colors mb-1 break-words sm:truncate sm:max-w-sm">
                           {booking.show?.movie?.title}
                         </h3>
                         <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">
@@ -218,13 +218,13 @@ const Dashboard = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-                      <div className="flex items-center gap-3">
-                        <Calendar size={16} className="text-[#f5c518]" />
-                        <div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Calendar size={16} className="shrink-0 text-[#f5c518]" />
+                        <div className="min-w-0">
                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                             Date & Time
                           </p>
-                          <p className="text-sm font-black text-gray-200">
+                          <p className="text-sm font-black text-gray-200 break-words">
                             {new Date(
                               booking.show?.startTime
                             ).toLocaleDateString()}{" "}
@@ -239,25 +239,25 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin size={16} className="text-[#f5c518]" />
-                        <div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <MapPin size={16} className="shrink-0 text-[#f5c518]" />
+                        <div className="min-w-0">
                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                             Cinema
                           </p>
-                          <p className="text-sm font-black text-gray-200">
+                          <p className="text-sm font-black text-gray-200 break-words">
                             {booking.show?.screen?.cinema?.name ||
                               "CinePlex Grand"}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Ticket size={16} className="text-[#f5c518]" />
-                        <div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Ticket size={16} className="shrink-0 text-[#f5c518]" />
+                        <div className="min-w-0">
                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                             Seats
                           </p>
-                          <p className="text-sm font-black text-gray-200">
+                          <p className="text-sm font-black text-gray-200 break-words">
                             {booking.seats?.join(", ")}
                           </p>
                         </div>
@@ -279,7 +279,7 @@ const Dashboard = () => {
             ))}
 
             {bookings.length === 0 && (
-              <div className="bg-[#1a1a1a] rounded-[40px] p-20 text-center border border-white/10 border-dashed">
+              <div className="bg-[#1a1a1a] rounded-[32px] sm:rounded-[40px] p-8 sm:p-20 text-center border border-white/10 border-dashed">
                 <Ticket size={64} className="text-gray-800 mx-auto mb-6" />
                 <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-600 mb-2">
                   No bookings found

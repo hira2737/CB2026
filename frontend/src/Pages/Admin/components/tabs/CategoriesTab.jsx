@@ -6,21 +6,21 @@ const CategoriesTab = ({ categories, onAddClick, onDelete }) => {
   const safeCategories = normalizeArrayResponse(categories, ["categories"]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-    <div className="flex justify-between items-center">
-      <h3 className="text-2xl font-black uppercase tracking-tighter">
+  <div className="space-y-10 animate-in fade-in duration-500">
+    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tighter">
         Manage <span className="text-[#f5c518]">Categories</span>
       </h3>
       <button
         onClick={onAddClick}
-        className="btn-fill-gold !px-8 !py-3 text-xs flex items-center gap-2"
+        className="btn-fill-gold !px-8 !py-3 text-xs flex w-full items-center justify-center gap-2 sm:w-auto"
       >
         <Plus size={16} /> Add Category
       </button>
     </div>
 
-    <div className="card-dark overflow-hidden">
-      <table className="w-full">
+    <div className="card-dark overflow-x-auto">
+      <table className="w-full min-w-[640px]">
         <thead className="bg-white/5">
           <tr className="text-[10px] font-black uppercase tracking-widest text-gray-500">
             <th className="px-10 py-6 text-left">Name</th>

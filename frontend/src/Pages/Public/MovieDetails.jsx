@@ -359,14 +359,14 @@ const MovieDetails = () => {
 
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/30" />
 
-        <div className="relative z-10 max-w-screen-2xl mx-auto px-5 md:px-12 pt-28 md:pt-36 flex flex-col lg:flex-row gap-10 items-center">
+        <div className="relative z-10 max-w-screen-2xl mx-auto px-5 md:px-12 pt-32 md:pt-36 flex flex-col lg:flex-row gap-10 items-center">
           <img
             src={movie.posterUrl || getBackdropUrl(movie)}
             className="w-56 md:w-80 rounded-[30px] border border-white/10 shadow-2xl"
             alt={movie.title}
           />
 
-          <div className="max-w-4xl">
+          <div className="min-w-0 max-w-4xl">
             <div className="flex flex-wrap gap-2 mb-5">
               {categories.map((category) => (
                 <DetailBadge key={category}>
@@ -375,7 +375,7 @@ const MovieDetails = () => {
               ))}
             </div>
 
-            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9]">
+            <h1 className="text-4xl sm:text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] break-words">
               {movie.title}
             </h1>
 
@@ -447,7 +447,7 @@ const MovieDetails = () => {
 
       <section className="max-w-screen-2xl mx-auto px-5 md:px-12 py-14">
         <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter">
             Available Shows
           </h2>
 
@@ -495,7 +495,7 @@ const MovieDetails = () => {
                       <MapPin size={22} />
                     </div>
 
-                    <h3 className="text-2xl font-black uppercase tracking-tighter">
+                    <h3 className="min-w-0 text-2xl font-black uppercase tracking-tighter break-words">
                       {cinema}
                     </h3>
                   </div>
@@ -526,7 +526,7 @@ const MovieDetails = () => {
                             {availability.label}
                           </span>
 
-                          <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 hidden w-64 -translate-x-1/2 rounded-2xl border border-[#f5c518]/20 bg-black p-4 text-left shadow-2xl group-hover:block">
+                          <div className="pointer-events-none absolute left-0 top-full z-20 mt-3 hidden w-[min(16rem,calc(100vw-2rem))] translate-x-0 rounded-2xl border border-[#f5c518]/20 bg-black p-4 text-left shadow-2xl group-hover:block sm:left-1/2 sm:-translate-x-1/2">
                             <div className="grid grid-cols-3 gap-3">
                               {availability.categories.map((item) => (
                                 <div key={item.category}>
@@ -557,8 +557,8 @@ const MovieDetails = () => {
       {/* SEAT MODAL */}
 
       {showSeatModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center px-5">
-          <div className="w-full max-w-md bg-[#121212] border border-[#f5c518]/20 rounded-[32px] p-8 relative">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-5">
+          <div className="relative w-full max-w-md max-h-[calc(100svh-3rem)] overflow-y-auto bg-[#121212] border border-[#f5c518]/20 rounded-[32px] p-6 sm:p-8">
             <button
               onClick={closeSeatModal}
               className="absolute right-5 top-5 text-gray-400 hover:text-white"

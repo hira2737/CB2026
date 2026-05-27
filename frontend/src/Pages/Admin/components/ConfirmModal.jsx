@@ -13,18 +13,18 @@ const ConfirmModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-[#121212] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-[#121212] p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-300">
         <div className="flex items-start justify-between gap-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="w-12 h-12 shrink-0 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center">
               <AlertTriangle size={22} />
             </div>
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-tighter text-white">
+            <div className="min-w-0">
+              <h2 className="text-xl font-black uppercase tracking-tighter text-white break-words">
                 {title}
               </h2>
-              <p className="text-sm text-gray-500 font-bold mt-1 leading-relaxed">
+              <p className="text-sm text-gray-500 font-bold mt-1 leading-relaxed break-words">
                 {message}
               </p>
             </div>

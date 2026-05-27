@@ -12,16 +12,16 @@ const BookingFailed = () => {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <div className="max-w-screen-2xl mx-auto px-12 pt-32 pb-24 flex items-center justify-center min-h-[80vh]">
+      <div className="max-w-screen-2xl mx-auto px-5 sm:px-12 pt-36 md:pt-32 pb-24 flex items-center justify-center min-h-[80vh]">
         <div className="max-w-2xl w-full text-center space-y-8 animate-in fade-in duration-500">
           <div className="flex justify-center">
-            <div className="w-32 h-32 bg-rose-500/10 rounded-full flex items-center justify-center border-4 border-rose-500 animate-in zoom-in duration-700">
-              <XCircle size={64} className="text-rose-500" />
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-rose-500/10 rounded-full flex items-center justify-center border-4 border-rose-500 animate-in zoom-in duration-700">
+              <XCircle size={56} className="text-rose-500" />
             </div>
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-6xl font-black uppercase tracking-tighter">
+            <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter">
               Payment <span className="text-rose-500">Failed</span>
             </h1>
             <p className="text-gray-400 text-lg font-medium">
@@ -29,11 +29,11 @@ const BookingFailed = () => {
             </p>
           </div>
 
-          <div className="bg-[#1a1a1a] rounded-3xl p-8 border border-rose-500/20">
+          <div className="bg-[#1a1a1a] rounded-3xl p-5 sm:p-8 border border-rose-500/20">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-black mb-2">
               Error Details
             </p>
-            <p className="text-rose-400 font-bold">{errorMsg}</p>
+            <p className="text-rose-400 font-bold break-words">{errorMsg}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">

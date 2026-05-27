@@ -53,17 +53,17 @@ const Register = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-20"></div>
       </div>
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-20">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6 py-28 sm:py-20">
         <div className="w-full max-w-md">
           <form
             onSubmit={handleSubmit}
-            className="bg-[#121212] p-12 rounded-[40px] shadow-2xl border border-white/5 relative overflow-hidden"
+            className="bg-[#121212] p-6 sm:p-12 rounded-[28px] sm:rounded-[40px] shadow-2xl border border-white/5 relative overflow-hidden"
           >
             <div className="text-center mb-10">
               <span className="text-[#f5c518] font-black uppercase tracking-[0.4em] text-[10px] mb-4 block">
                 Membership
               </span>
-              <h2 className="text-4xl font-black uppercase tracking-tighter mb-2">
+              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter mb-2">
                 Join <span className="text-[#f5c518]">CINEBOOK</span>
               </h2>
               <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">
@@ -139,7 +139,7 @@ const Register = () => {
                 Already a member?{" "}
                 <Link
                   to="/login"
-                  className="text-[#f5c518] hover:underline ml-2"
+                  className="text-[#f5c518] hover:underline sm:ml-2"
                 >
                   Sign In
                 </Link>

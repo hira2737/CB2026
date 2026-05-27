@@ -413,22 +413,22 @@ const SeatSelection = () => {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-36 md:pt-32 pb-20">
 
         {/* TOP */}
         <div className="mb-10">
 
-          <h1 className="text-4xl font-black mb-2">
+          <h1 className="text-3xl sm:text-4xl font-black mb-2 break-words">
             {show?.movie?.title}
           </h1>
 
-          <div className="flex items-center gap-2 text-gray-400">
-            <MapPin size={16} />
+          <div className="flex min-w-0 items-center gap-2 text-gray-400">
+            <MapPin size={16} className="shrink-0" />
 
-            {
+            <span className="min-w-0 break-words">{
               show?.screen?.cinema
                 ?.name
-            }
+            }</span>
           </div>
 
           <p className="mt-4 text-[#f5c518] font-bold tracking-widest uppercase text-sm">
@@ -452,7 +452,8 @@ const SeatSelection = () => {
         </div>
 
         {/* SEATS */}
-        <div className="space-y-12">
+        <div className="overflow-x-auto pb-4">
+          <div className="min-w-[860px] space-y-12 lg:min-w-0">
 
           {SEAT_LAYOUT.map(
             (section) => (
@@ -499,7 +500,7 @@ const SeatSelection = () => {
                             {row}
                           </span>
 
-                          <div className="flex gap-2 flex-wrap justify-center">
+                          <div className="flex gap-2 justify-center">
 
                             {seats.map(
                               (
@@ -571,6 +572,7 @@ const SeatSelection = () => {
               </div>
             )
           )}
+          </div>
         </div>
 
         {/* LEGEND */}
@@ -593,11 +595,11 @@ const SeatSelection = () => {
         </div>
 
         {/* SUMMARY */}
-        <div className="mt-14 max-w-xl mx-auto bg-[#121212] border border-white/10 rounded-3xl p-8">
+        <div className="mt-14 max-w-xl mx-auto bg-[#121212] border border-white/10 rounded-3xl p-5 sm:p-8">
 
           <div className="flex items-center justify-between mb-5">
 
-            <h2 className="text-2xl font-black">
+            <h2 className="text-xl sm:text-2xl font-black">
               Booking Summary
             </h2>
 
@@ -624,7 +626,7 @@ const SeatSelection = () => {
               Total
             </span>
 
-            <span className="text-3xl font-black text-[#f5c518]">
+            <span className="text-2xl sm:text-3xl font-black text-[#f5c518]">
               ₹{calculateTotal()}
             </span>
           </div>

@@ -29,12 +29,12 @@ const MovieCard = ({ movie, hasActiveShow = false, onSelect }) => {
           loading="lazy"
         />
 
-        <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-          <span className="rounded-xl bg-[#f5c518] px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-black shadow-lg">
+        <div className="absolute inset-x-3 top-3 z-20 flex flex-wrap items-start justify-between gap-2">
+          <span className="max-w-full rounded-xl bg-[#f5c518] px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-black shadow-lg">
             {status}
           </span>
           {hasActiveShow && (
-            <span className="rounded-xl border border-white/10 bg-black/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-md">
+            <span className="max-w-full rounded-xl border border-white/10 bg-black/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-md">
               Only in theatres
             </span>
           )}
@@ -53,11 +53,11 @@ const MovieCard = ({ movie, hasActiveShow = false, onSelect }) => {
             {movie.title}
           </h3>
 
-          <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-300">
-            <Clock size={13} />
+          <div className="mt-3 flex min-w-0 items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-300">
+            <Clock size={13} className="shrink-0" />
             <span>{formatDuration(movie.duration)}</span>
             <span className="text-white/20">•</span>
-            <span className="truncate">{languages.slice(0, 2).join(", ") || "Language TBA"}</span>
+            <span className="min-w-0 truncate">{languages.slice(0, 2).join(", ") || "Language TBA"}</span>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
