@@ -11,6 +11,7 @@ import jsPDF from "jspdf";
 import API from "../../config/api";
 import toast from "react-hot-toast";
 import ticketTemplate from "./tickets/CineBook_Ticket.png";
+import ReviewPopup from "../../Components/ReviewPopup";
 
 const ADMIT_WORDS = {
   1: "One",
@@ -53,6 +54,8 @@ const BookingSuccess = () => {
 
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showReviewPopup, setShowReviewPopup] = useState(false);
+  const [reviewPromptDismissed, setReviewPromptDismissed] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -77,6 +80,24 @@ const BookingSuccess = () => {
 
     fetchBooking();
   }, [bookingId, tran_id]);
+
+  useEffect(() => {
+    if (
+      !booking ||
+      reviewPromptDismissed ||
+      booking.isReviewed ||
+      booking.paymentStatus !== "paid" ||
+      booking.bookingStatus !== "confirmed"
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowReviewPopup(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [booking, reviewPromptDismissed]);
 
   // ============================================
   // DOWNLOAD PDF TICKET
@@ -273,6 +294,11 @@ const BookingSuccess = () => {
     booking?.show?.startTime
   );
 
+  const closeReviewPopup = () => {
+    setReviewPromptDismissed(true);
+    setShowReviewPopup(false);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
@@ -448,6 +474,19 @@ const BookingSuccess = () => {
           </Link>
         </div>
       </div>
+
+      <ReviewPopup
+        bookingId={booking?._id}
+        isOpen={showReviewPopup}
+        onClose={closeReviewPopup}
+        onSubmitted={() =>
+          setBooking((currentBooking) =>
+            currentBooking
+              ? { ...currentBooking, isReviewed: true }
+              : currentBooking
+          )
+        }
+      />
     </div>
   );
 };

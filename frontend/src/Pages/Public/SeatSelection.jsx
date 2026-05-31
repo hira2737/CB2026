@@ -401,6 +401,57 @@ const SeatSelection = () => {
     }
   };
 
+  const handleSplitBill = async () => {
+    if (isProcessing) return;
+
+    if (selectedSeats.length < 2) {
+      return toast.error("Select at least 2 seats.");
+    }
+
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login first.");
+      return navigate("/login");
+    }
+
+    setIsProcessing(true);
+
+    const toastId = toast.loading(
+      "Creating group room..."
+    );
+
+    try {
+      await API.post("/bookings/lock", {
+        showId,
+        seats: selectedSeats,
+      });
+
+      const { data } = await API.post(
+        "/group/create",
+        {
+          showId,
+          seats: selectedSeats,
+        }
+      );
+
+      toast.success("Group room created!", {
+        id: toastId,
+      });
+
+      navigate(`/group/${data.roomCode}`);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to create room.",
+        { id: toastId }
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -643,6 +694,19 @@ const SeatSelection = () => {
               ? "Processing..."
               : "Proceed To Payment"}
           </button>
+
+          {selectedSeats.length >= 2 && (
+            <button
+              type="button"
+              onClick={handleSplitBill}
+              disabled={isProcessing}
+              className="w-full mt-3 py-4 flex items-center justify-center gap-3 rounded-2xl border border-[#f5c518]/40 text-[#f5c518] hover:bg-[#f5c518]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-xs font-black tracking-[0.3em]">
+                SPLIT WITH FRIENDS
+              </span>
+            </button>
+          )}
 
           <p className="text-center text-xs text-gray-500 mt-5 tracking-wider uppercase">
             Tickets once booked are

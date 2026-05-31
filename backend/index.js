@@ -107,6 +107,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/resale", resaleRoutes);
+app.use("/api/group", groupRoutes);
 app.use("/api/groups", groupRoutes);
 // ── 404 Handler ──────────────────────────
 app.use((req, res) => {

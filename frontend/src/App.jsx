@@ -7,6 +7,7 @@ import Register from "./Pages/Public/Register";
 import SeatSelection from "./Pages/Public/SeatSelection";
 import BookingSuccess from "./Pages/Public/BookingSuccess";
 import BookingFailed from "./Pages/Public/BookingFailed";
+import GroupRoom from "./Pages/Public/GroupRoom";
 import Dashboard from "./Pages/User/Dashboard";
 import AdminDashboard from "./Pages/Admin/Dashboard";
 
@@ -60,6 +61,14 @@ function App() {
           element={
             <ProtectedRoute>
               <BookingFailed />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/group/:roomCode"
+          element={
+            <ProtectedRoute>
+              <GroupRoom />
             </ProtectedRoute>
           }
         />
