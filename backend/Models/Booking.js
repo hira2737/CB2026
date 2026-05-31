@@ -41,7 +41,15 @@ const bookingSchema = new mongoose.Schema(
 
     bookingStatus: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled"],
+      enum: [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "resale_listed",
+        "resale_sold",
+        "transferred_out",
+        "transferred_in",
+      ],
       default: "pending",
       index: true,
     },
@@ -53,7 +61,6 @@ const bookingSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ✅ Razorpay additions (NEW)
     razorpayOrderId: {
       type: String,
       index: true,
@@ -71,6 +78,19 @@ const bookingSchema = new mongoose.Schema(
       index: true,
       sparse: true,
     },
+
+    isReviewed: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    originalBookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -78,7 +98,7 @@ const bookingSchema = new mongoose.Schema(
 );
 
 /**
- * ⚡ PERFORMANCE INDEXES
+ * PERFORMANCE INDEXES
  */
 
 // show-based queries (seat checking, booked seats)
@@ -86,8 +106,5 @@ bookingSchema.index({ show: 1, bookingStatus: 1 });
 
 // user history
 bookingSchema.index({ user: 1, createdAt: -1 });
-
-// payment callback lookup
-bookingSchema.index({ transactionId: 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);

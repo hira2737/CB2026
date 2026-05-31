@@ -1,6 +1,11 @@
 const express = require("express");
 require("dotenv").config();
 
+const reviewRoutes = require("./Routes/ReviewRoutes");
+const notificationRoutes = require("./Routes/NotificationRoutes");
+const resaleRoutes = require("./Routes/ResaleRoutes");
+const groupRoutes = require("./Routes/GroupRoutes");
+
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -99,7 +104,10 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/cinemas", cinemaRoutes);
 app.use("/api/screens", screenRoutes);
 app.use("/api/categories", categoryRoutes);
-
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/resale", resaleRoutes);
+app.use("/api/groups", groupRoutes);
 // ── 404 Handler ──────────────────────────
 app.use((req, res) => {
   res.status(404).json({
