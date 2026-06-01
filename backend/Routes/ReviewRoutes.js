@@ -11,29 +11,22 @@ const {
   getMovieReviews,
   getUserReviews,
   getAllReviews,
+  deleteReview,
 } = require("../Controllers/ReviewController");
 
-// User review actions
+// Create review (logged-in users only)
 router.post("/", authMiddleware, createReview);
 
-router.get("/test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Review routes working",
-  });
-});
-
+// Get current user's reviews
 router.get("/my-reviews", authMiddleware, getUserReviews);
 
-// Public movie reviews
+// Get all reviews for a movie (public)
 router.get("/movie/:movieId", getMovieReviews);
 
-// Admin
-router.get(
-  "/admin/all",
-  authMiddleware,
-  adminMiddleware,
-  getAllReviews
-);
+// Admin: get all reviews
+router.get("/admin/all", authMiddleware, adminMiddleware, getAllReviews);
+
+// Admin: delete a review
+router.delete("/:reviewId", authMiddleware, adminMiddleware, deleteReview);
 
 module.exports = router;

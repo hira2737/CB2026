@@ -278,7 +278,27 @@ exports.verifyPayment = async (req, res) => {
         emailErr.message
       );
     }
+// ── Booking + payment notifications (non-blocking) ────────
+try {
+  const { createNotification } = require("../utils/notificationService");
 
+  await createNotification(
+    booking.user._id,
+    "booking",
+    `Your booking for "${booking.show.movie.title}" has been confirmed.`,
+    `/booking/success/${booking._id}`
+  );
+
+  await createNotification(
+    booking.user._id,
+    "payment",
+    `Payment of ₹${booking.totalPrice} completed successfully.`,
+    `/booking/success/${booking._id}`
+  );
+} catch (notifErr) {
+  console.error("Notification error:", notifErr.message);
+}
+// ──────────────────────────────────────────────────────────
     return res.json({
       success: true,
       bookingId: booking._id,

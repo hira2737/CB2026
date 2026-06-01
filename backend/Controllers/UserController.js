@@ -55,7 +55,6 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -63,7 +62,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find User
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -73,7 +71,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Compare Password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -83,7 +80,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate Token
     const token = jwt.sign(
       {
         id: user._id,
@@ -91,12 +87,18 @@ exports.login = async (req, res) => {
         name: user.name,
       },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
 
-    // Response
+    // ── Login notification (non-blocking, never fails the login) ──
+    const { createNotification } = require("../utils/notificationService");
+    createNotification(
+      user._id,
+      "login",
+      "Login successful. Welcome back!"
+    ).catch(() => {});
+    // ──────────────────────────────────────────────────────────────
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -108,10 +110,11 @@ exports.login = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (error) {
-    res.status(500).json({
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Login failed",
     });
   }
 };

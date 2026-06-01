@@ -23,13 +23,10 @@ exports.createReview = async (req, res) => {
       });
     }
 
-    const booking = await Booking.findById(bookingId)
-      .populate({
-        path: "show",
-        populate: {
-          path: "movie",
-        },
-      });
+    const booking = await Booking.findById(bookingId).populate({
+      path: "show",
+      populate: { path: "movie" },
+    });
 
     if (!booking) {
       return res.status(404).json({
@@ -70,20 +67,15 @@ exports.createReview = async (req, res) => {
     booking.isReviewed = true;
     await booking.save();
 
-    return res.status(201).json({
-      success: true,
-      review,
-    });
+    return res.status(201).json({ success: true, review });
   } catch (err) {
     console.error("createReview error:", err);
-
     if (err.code === 11000) {
       return res.status(400).json({
         success: false,
         message: "Review already submitted",
       });
     }
-
     return res.status(500).json({
       success: false,
       message: "Failed to create review",
@@ -92,22 +84,19 @@ exports.createReview = async (req, res) => {
 };
 
 // ======================================================
-// GET MOVIE REVIEWS
+// GET MOVIE REVIEWS (Public)
 // ======================================================
 exports.getMovieReviews = async (req, res) => {
   try {
     const { movieId } = req.params;
 
-    const reviews = await Review.find({
-      movie: movieId,
-    })
+    const reviews = await Review.find({ movie: movieId })
       .populate("user", "name")
       .sort({ createdAt: -1 });
 
     const averageRating =
       reviews.length > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-          reviews.length
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
         : 0;
 
     return res.json({
@@ -118,7 +107,6 @@ exports.getMovieReviews = async (req, res) => {
     });
   } catch (err) {
     console.error("getMovieReviews error:", err);
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch reviews",
@@ -127,23 +115,17 @@ exports.getMovieReviews = async (req, res) => {
 };
 
 // ======================================================
-// USER REVIEWS
+// GET USER'S OWN REVIEWS
 // ======================================================
 exports.getUserReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({
-      user: req.user.id,
-    })
+    const reviews = await Review.find({ user: req.user.id })
       .populate("movie", "title")
       .sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      reviews,
-    });
+    return res.json({ success: true, reviews });
   } catch (err) {
     console.error("getUserReviews error:", err);
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch reviews",
@@ -152,7 +134,7 @@ exports.getUserReviews = async (req, res) => {
 };
 
 // ======================================================
-// ADMIN REVIEWS
+// GET ALL REVIEWS (Admin)
 // ======================================================
 exports.getAllReviews = async (req, res) => {
   try {
@@ -161,16 +143,38 @@ exports.getAllReviews = async (req, res) => {
       .populate("movie", "title")
       .sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      reviews,
-    });
+    return res.json({ success: true, reviews });
   } catch (err) {
     console.error("getAllReviews error:", err);
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch reviews",
+    });
+  }
+};
+
+// ======================================================
+// DELETE REVIEW (Admin only)
+// ======================================================
+exports.deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+
+    const deleted = await Review.findByIdAndDelete(reviewId);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found",
+      });
+    }
+
+    return res.json({ success: true, message: "Review deleted" });
+  } catch (err) {
+    console.error("deleteReview error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete review",
     });
   }
 };
