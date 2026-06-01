@@ -23,7 +23,201 @@ import {
   Ticket,
   Plus,
   TrendingUp,
+  Star,
 } from "lucide-react";
+
+// ── Reviews Tab (inline panel) ─────────────────────────────────────────────
+const ReviewsTab = () => {
+  const [reviews, setReviews] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = React.useState("");
+
+  React.useEffect(() => {
+    API.get("/reviews/admin/all")
+      .then(({ data }) => {
+        if (data.success) setReviews(data.reviews);
+      })
+      .catch(() => toast.error("Failed to load reviews"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleDelete = async (reviewId) => {
+    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+    try {
+      await API.delete(`/reviews/${reviewId}`);
+      setReviews((prev) => prev.filter((r) => r._id !== reviewId));
+      toast.success("Review deleted");
+    } catch {
+      toast.error("Failed to delete review");
+    }
+  };
+
+  const filtered = filter
+    ? reviews.filter((r) =>
+        r.movie?.title?.toLowerCase().includes(filter.toLowerCase())
+      )
+    : reviews;
+
+  // Group to compute per-movie averages
+  const movieStats = reviews.reduce((acc, r) => {
+    const id = r.movie?._id;
+    if (!id) return acc;
+    if (!acc[id]) acc[id] = { title: r.movie.title, ratings: [] };
+    acc[id].ratings.push(r.rating);
+    return acc;
+  }, {});
+
+  if (loading) {
+    return (
+      <div className="py-16 text-center text-gray-500 text-sm">
+        Loading reviews...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            Total Reviews
+          </p>
+          <p className="text-3xl font-black text-[#f5c518] mt-1">
+            {reviews.length}
+          </p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            Movies Reviewed
+          </p>
+          <p className="text-3xl font-black text-[#f5c518] mt-1">
+            {Object.keys(movieStats).length}
+          </p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            Average Rating
+          </p>
+          <p className="text-3xl font-black text-[#f5c518] mt-1">
+            {reviews.length > 0
+              ? (
+                  reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+                ).toFixed(1)
+              : "—"}
+          </p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            5-Star Reviews
+          </p>
+          <p className="text-3xl font-black text-[#f5c518] mt-1">
+            {reviews.filter((r) => r.rating === 5).length}
+          </p>
+        </div>
+      </div>
+
+      {/* Filter input */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Filter by movie title..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-[#f5c518]/50 transition-colors"
+        />
+      </div>
+
+      {/* Reviews table */}
+      {filtered.length === 0 ? (
+        <div className="py-16 text-center">
+          <Star size={36} className="mx-auto mb-3 text-gray-700" />
+          <p className="text-sm text-gray-500">No reviews found</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 bg-white/5">
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Movie
+                </th>
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  User
+                </th>
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Rating
+                </th>
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Comment
+                </th>
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Date
+                </th>
+                <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr
+                  key={r._id}
+                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                >
+                  <td className="px-5 py-4 font-bold text-white">
+                    {r.movie?.title || "—"}
+                  </td>
+                  <td className="px-5 py-4 text-gray-300">
+                    {r.user?.name || "—"}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={13}
+                          className={
+                            s <= r.rating
+                              ? "fill-[#f5c518] text-[#f5c518]"
+                              : "text-gray-700"
+                          }
+                        />
+                      ))}
+                      <span className="ml-1 text-xs text-gray-400">
+                        {r.rating}/5
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-gray-400 max-w-xs">
+                    <span className="line-clamp-2">
+                      {r.comment || (
+                        <span className="text-gray-600 italic">
+                          No comment
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-gray-500 text-xs whitespace-nowrap">
+                    {new Date(r.createdAt).toLocaleDateString("en-IN")}
+                  </td>
+                  <td className="px-5 py-4">
+                    <button
+                      onClick={() => handleDelete(r._id)}
+                      className="text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -1022,6 +1216,14 @@ const AdminDashboard = () => {
             icon={Film}
             label="Categories"
           />
+
+          <TabButton
+  id="reviews"
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  icon={Star}
+  label="Reviews"
+/>
         </div>
 
         <div>
@@ -1031,6 +1233,7 @@ const AdminDashboard = () => {
           {activeTab === "shows" && renderShows()}
           {activeTab === "bookings" && renderBookings()}
           {activeTab === "categories" && renderCategories()}
+          {activeTab === "reviews" && <ReviewsTab />}
         </div>
       </div>
 

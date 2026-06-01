@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Film, Search, User, LogOut } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -95,6 +96,9 @@ const Navbar = () => {
 
           {user ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+              {/* Notification bell — visible to all logged-in users */}
+              <NotificationBell />
+
               {user.role === "admin" && (
                 <Link
                   to="/admin"
@@ -104,10 +108,10 @@ const Navbar = () => {
                 </Link>
               )}
               {user.role !== "admin" && (
-              <Link
-                to="/bookings"
-                className="btn-fill-gold !py-1.5 !px-3 sm:!px-4 text-[10px] tracking-widest flex items-center gap-2 whitespace-nowrap"
-              >
+                <Link
+                  to="/bookings"
+                  className="btn-fill-gold !py-1.5 !px-3 sm:!px-4 text-[10px] tracking-widest flex items-center gap-2 whitespace-nowrap"
+                >
                   <User size={14} /> ACCOUNT
                 </Link>
               )}
