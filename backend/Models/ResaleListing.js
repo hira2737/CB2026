@@ -62,20 +62,56 @@ const resaleListingSchema = new mongoose.Schema(
       },
     ],
 
+    seatCategory: {
+      type: String,
+      enum: ["PLATINUM", "GOLD", "SILVER"],
+      required: true,
+   },
+
+    // ACTIVE | SOLD | EXPIRED | CANCELLED
     status: {
       type: String,
       enum: ["active", "sold", "expired", "cancelled"],
       default: "active",
     },
 
+    razorpayOrderId: {
+      type: String,
+      default: null,
+      index: true,
+   },
+
     soldAt: {
       type: Date,
       default: null,
     },
 
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
+
+    expiredAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Month limit tracking (2 listings per month)
     listingMonth: {
       type: String,
       required: true,
+    },
+
+    // For audit history
+    transferred: {
+      type: Boolean,
+      default: false,
+    },
+
+    transferBookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null,
     },
   },
   {
@@ -85,6 +121,8 @@ const resaleListingSchema = new mongoose.Schema(
 
 resaleListingSchema.index({ seller: 1, listingMonth: 1 });
 resaleListingSchema.index({ status: 1, showTime: 1 });
+resaleListingSchema.index({ buyer: 1 });
+resaleListingSchema.index({ soldAt: 1 });
 
 module.exports = mongoose.model(
   "ResaleListing",

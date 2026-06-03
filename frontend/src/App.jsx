@@ -8,6 +8,7 @@ import SeatSelection from "./Pages/Public/SeatSelection";
 import BookingSuccess from "./Pages/Public/BookingSuccess";
 import BookingFailed from "./Pages/Public/BookingFailed";
 import GroupRoom from "./Pages/Public/GroupRoom";
+import ResaleMarket from "./Pages/Public/ResaleMarket";
 import Dashboard from "./Pages/User/Dashboard";
 import AdminDashboard from "./Pages/Admin/Dashboard";
 
@@ -72,6 +73,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+  path="/resale"
+  element={
+    <ProtectedRoute>
+      <ResaleMarket />
+    </ProtectedRoute>
+  }
+/>
+
         <Route
           path="/dashboard"
           element={

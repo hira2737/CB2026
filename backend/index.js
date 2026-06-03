@@ -11,7 +11,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const DBConnect = require("./config/DBConfig");
-
+const expireResaleListings = require("./utils/resaleExpiryJob");
 const app = express();
 
 const PORT = process.env.PORT || 8080;
@@ -21,7 +21,7 @@ DBConnect();
 
 // ── Security ─────────────────────────────
 app.use(helmet());
-
+setInterval(expireResaleListings, 5 * 60 * 1000);
 // ── Body Parser ──────────────────────────
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));

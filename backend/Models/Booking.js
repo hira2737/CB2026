@@ -91,6 +91,12 @@ const bookingSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    // For resale tracking
+    isResaleBooking: {
+    type: Boolean,
+    default: false,
+    index: true,
+    },
   },
   {
     timestamps: true,

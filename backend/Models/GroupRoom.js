@@ -112,6 +112,5 @@ const groupRoomSchema = new mongoose.Schema(
   }
 );
 
-groupRoomSchema.index({ roomCode: 1 });
 
 module.exports = mongoose.model("GroupRoom", groupRoomSchema);

@@ -40,9 +40,25 @@ const Dashboard = () => {
     };
     fetchBookings();
   }, []);
+  const handleListForResale = async (bookingId) => {
+  try {
+    await API.post("/resale/list", {
+      bookingId,
+    });
 
+    toast.success("Ticket listed for resale!");
+
+    const refreshed = await API.get("/bookings/history");
+    setBookings(refreshed.data);
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message || "Failed to list ticket for resale"
+    );
+  }
+};
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    
     const loadingToast = toast.loading("Updating profile...");
     try {
       const { data } = await API.put("/auth/profile", editData);
@@ -266,19 +282,23 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-6">
-                    <p className="text-2xl font-black text-[#f5c518]">
-                      BDT {booking.totalPrice?.toFixed(2)}
-                    </p>
-                    <ChevronRight
-                      size={24}
-                      className="text-gray-700 group-hover:text-[#f5c518] group-hover:translate-x-2 transition-all cursor-pointer"
-                    />
-                  </div>
+  <p className="text-2xl font-black text-[#f5c518]">
+    ₹ {booking.totalPrice?.toFixed(0)}
+  </p>
+
+  <button
+  onClick={() => handleListForResale(booking._id)}
+  className="px-4 py-2 bg-[#f5c518] text-black rounded-xl font-bold text-sm"
+>
+  List For Resale
+</button>
+</div>
+
                 </div>
               </div>
             ))}
 
-            {bookings.length === 0 && (
+{bookings.length === 0 && (
               <div className="bg-[#1a1a1a] rounded-[32px] sm:rounded-[40px] p-8 sm:p-20 text-center border border-white/10 border-dashed">
                 <Ticket size={64} className="text-gray-800 mx-auto mb-6" />
                 <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-600 mb-2">

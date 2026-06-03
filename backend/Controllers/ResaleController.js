@@ -11,10 +11,10 @@ const buildResaleTransactionId = () => `RSL-${crypto.randomBytes(4).toString("he
 
 exports.createListing = async (req, res) => {
   try {
-    const { bookingId, resalePrice } = req.body;
+    const { bookingId } = req.body;
     const sellerId = req.user.id;
 
-    if (!bookingId || !resalePrice) {
+    if (!bookingId) {
       return res.status(400).json({ success: false, message: "bookingId and resalePrice are required" });
     }
 
@@ -38,16 +38,28 @@ exports.createListing = async (req, res) => {
     }
 
     const original = booking.totalPrice;
-    const minPrice = Math.ceil(original * 0.70);
-    const maxPrice = Math.floor(original * 0.85);
-    const parsedPrice = Number(resalePrice);
+    const firstSeat = booking.seats?.[0];
 
-    if (isNaN(parsedPrice) || parsedPrice < minPrice || parsedPrice > maxPrice) {
-      return res.status(400).json({
-        success: false,
-        message: `Resale price must be between ₹${minPrice} and ₹${maxPrice} (70%–85% of original ₹${original})`,
-      });
-    }
+if (!firstSeat) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid booking seats",
+  });
+}
+
+let seatCategory;
+let resalePrice;
+
+if (original >= 300) {
+  seatCategory = "PLATINUM";
+  resalePrice = 235;
+} else if (original >= 200) {
+  seatCategory = "GOLD";
+  resalePrice = 175;
+} else {
+  seatCategory = "SILVER";
+  resalePrice = 115;
+}
 
     const listingMonth = currentListingMonth();
     const monthCount = await ResaleListing.countDocuments({
@@ -59,9 +71,10 @@ exports.createListing = async (req, res) => {
       return res.status(400).json({ success: false, message: "You have reached the limit of 2 resale listings per month" });
     }
 
-    const sellerAmount = Math.round(parsedPrice * 0.90);
-    const platformCommission = Math.round(parsedPrice * 0.10);
+    const PLATFORM_COMMISSION_RATE = 0.10;
 
+const platformCommission = Math.round(resalePrice * PLATFORM_COMMISSION_RATE);
+const sellerAmount = resalePrice - platformCommission;
     const movieTitle = booking.show?.movie?.title || "Movie";
     const cinemaName = booking.show?.screen?.cinema
       ? `${booking.show.screen.cinema.name}, ${booking.show.screen.cinema.city}`
@@ -71,7 +84,7 @@ exports.createListing = async (req, res) => {
       bookingId: booking._id,
       seller: sellerId,
       originalPrice: original,
-      resalePrice: parsedPrice,
+      resalePrice: resalePrice,
       sellerAmount,
       platformCommission,
       movieTitle,
@@ -79,6 +92,7 @@ exports.createListing = async (req, res) => {
       showTime: booking.show.startTime,
       seats: booking.seats,
       listingMonth,
+      seatCategory,
     });
 
     await Booking.findByIdAndUpdate(booking._id, { bookingStatus: "resale_listed" });
@@ -238,28 +252,34 @@ exports.verifyBuyPayment = async (req, res) => {
 
     const transactionId = buildResaleTransactionId();
 
-    const newBooking = await Booking.create({
+    const updatedBooking =
+  await Booking.findByIdAndUpdate(
+    originalBooking._id,
+    {
       user: buyerId,
-      show: originalBooking.show._id,
-      seats: originalBooking.seats,
-      totalPrice: listing.resalePrice,
-      paymentStatus: "paid",
-      bookingStatus: "transferred_in",
-      originalBookingId: originalBooking._id,
       transactionId,
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-    });
+      paymentStatus: "paid",
+      bookingStatus: "confirmed",
+      isResaleBooking: true,
+originalBookingId: originalBooking._id,
+    },
+    { new: true }
+  );
 
-    await Booking.findByIdAndUpdate(originalBooking._id, {
-      bookingStatus: "transferred_out",
-    });
+    // await Booking.findByIdAndUpdate(originalBooking._id, {
+//   bookingStatus: "transferred_out",
+// });
 
-    await ResaleListing.findByIdAndUpdate(listingId, {
-      status: "sold",
-      buyer: buyerId,
-      soldAt: new Date(),
-    });
+    await ResaleListing.findByIdAndUpdate(
+  listingId,
+  {
+    status: "sold",
+    buyer: buyerId,
+    soldAt: new Date(),
+    transferred: true,
+    transferBookingId: updatedBooking._id,
+  }
+);
 
     const movieTitle = originalBooking.show?.movie?.title || "Movie";
 
@@ -276,7 +296,11 @@ exports.verifyBuyPayment = async (req, res) => {
       "/dashboard"
     );
 
-    return res.json({ success: true, bookingId: newBooking._id, transactionId });
+   return res.json({
+  success: true,
+  bookingId: updatedBooking._id,
+  transactionId
+});
   } catch (err) {
     console.error("verifyBuyPayment error:", err);
     return res.status(500).json({ success: false, message: "Payment verification failed" });
