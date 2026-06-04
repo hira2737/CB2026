@@ -9,98 +9,168 @@ const { createNotification } = require("../utils/notificationService");
 const currentListingMonth = () => new Date().toISOString().slice(0, 7); // "YYYY-MM"
 const buildResaleTransactionId = () => `RSL-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 
+const getSeatPricing = (seat) => {
+  const row = String(seat || "")[0]?.toUpperCase();
+
+  if (["A", "B"].includes(row)) {
+    return { category: "PLATINUM", original: 360, resale: 235 };
+  }
+
+  if (["C", "D", "E", "F"].includes(row)) {
+    return { category: "GOLD", original: 270, resale: 175 };
+  }
+
+  if (["G", "H", "I", "J"].includes(row)) {
+    return { category: "SILVER", original: 180, resale: 115 };
+  }
+
+  return null;
+};
+
 exports.createListing = async (req, res) => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId, selectedSeats: rawSelectedSeats } = req.body;
     const sellerId = req.user.id;
 
+    // ========== VALIDATION ==========
     if (!bookingId) {
-      return res.status(400).json({ success: false, message: "bookingId and resalePrice are required" });
+      return res.status(400).json({ success: false, message: "bookingId is required" });
     }
 
     if (!mongoose.isValidObjectId(bookingId)) {
       return res.status(400).json({ success: false, message: "Invalid booking ID" });
     }
 
+    if (!Array.isArray(rawSelectedSeats) || rawSelectedSeats.length === 0) {
+      return res.status(400).json({ success: false, message: "Please select at least one seat to resale" });
+    }
+
+    const selectedSeats = [
+      ...new Set(
+        rawSelectedSeats
+          .map((seat) => String(seat || "").trim().toUpperCase())
+          .filter(Boolean)
+      ),
+    ];
+
+    if (selectedSeats.length === 0) {
+      return res.status(400).json({ success: false, message: "Please select at least one valid seat to resale" });
+    }
+
+    // ========== FETCH BOOKING ==========
     const booking = await Booking.findOne({
       _id: bookingId,
       user: sellerId,
-      bookingStatus: "confirmed",
+      bookingStatus: { $in: ["confirmed", "resale_listed"] },
     }).populate({ path: "show", populate: [{ path: "movie", select: "title" }, { path: "screen", populate: { path: "cinema", select: "name city" } }] });
 
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found or not eligible for resale" });
     }
 
+    // ========== VERIFY SELECTED SEATS EXIST IN BOOKING ==========
+    const bookingSeats = booking.seats || [];
+    const invalidSeats = selectedSeats.filter(seat => !bookingSeats.includes(seat));
+
+    if (invalidSeats.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid seats: ${invalidSeats.join(", ")}. These seats are not in your booking.`
+      });
+    }
+
+    // ========== PREVENT DUPLICATE RESALE LISTINGS FOR SAME SEATS ==========
+    const existingListing = await ResaleListing.findOne({
+      bookingId,
+      seats: { $in: selectedSeats },
+      status: { $in: ["active", "sold"] },
+    });
+
+    if (existingListing) {
+      return res.status(400).json({
+        success: false,
+        message: `Seats ${selectedSeats.join(", ")} are already listed for resale`
+      });
+    }
+
+    // ========== TIME CHECK ==========
     const showStart = new Date(booking.show.startTime);
     if (showStart <= new Date(Date.now() + 3600000)) {
       return res.status(400).json({ success: false, message: "Resale is not allowed within 1 hour of show time" });
     }
 
-    const original = booking.totalPrice;
-    const firstSeat = booking.seats?.[0];
+    // ========== CALCULATE PRICING PER SELECTED SEAT ==========
+    const seatCount = selectedSeats.length;
+    const pricingRows = selectedSeats.map(getSeatPricing);
 
-if (!firstSeat) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid booking seats",
-  });
-}
+    if (pricingRows.some((item) => !item)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid seat category selected",
+      });
+    }
 
-let seatCategory;
-let resalePrice;
+    const categorySet = new Set(pricingRows.map((item) => item.category));
+    const seatCategory =
+      categorySet.size === 1 ? pricingRows[0].category : "MIXED";
+    const totalOriginalPrice = pricingRows.reduce(
+      (sum, item) => sum + item.original,
+      0
+    );
+    const totalResalePrice = pricingRows.reduce(
+      (sum, item) => sum + item.resale,
+      0
+    );
+    const PLATFORM_COMMISSION_RATE = 0.10;
+    const platformCommission = Math.round(totalResalePrice * PLATFORM_COMMISSION_RATE);
+    const sellerAmount = totalResalePrice - platformCommission;
 
-if (original >= 300) {
-  seatCategory = "PLATINUM";
-  resalePrice = 235;
-} else if (original >= 200) {
-  seatCategory = "GOLD";
-  resalePrice = 175;
-} else {
-  seatCategory = "SILVER";
-  resalePrice = 115;
-}
-
+    // ========== MONTHLY LISTING LIMIT (2 listings per month) ==========
     const listingMonth = currentListingMonth();
     const monthCount = await ResaleListing.countDocuments({
       seller: sellerId,
       listingMonth,
       status: { $in: ["active", "sold"] },
     });
+
     if (monthCount >= 2) {
       return res.status(400).json({ success: false, message: "You have reached the limit of 2 resale listings per month" });
     }
 
-    const PLATFORM_COMMISSION_RATE = 0.10;
-
-const platformCommission = Math.round(resalePrice * PLATFORM_COMMISSION_RATE);
-const sellerAmount = resalePrice - platformCommission;
+    // ========== BUILD LISTING ==========
     const movieTitle = booking.show?.movie?.title || "Movie";
     const cinemaName = booking.show?.screen?.cinema
       ? `${booking.show.screen.cinema.name}, ${booking.show.screen.cinema.city}`
       : "Cinema";
 
+    const seatKeys = selectedSeats.map((seat) => `${booking._id}:${seat}`);
+
     const listing = await ResaleListing.create({
       bookingId: booking._id,
       seller: sellerId,
-      originalPrice: original,
-      resalePrice: resalePrice,
+      seats: selectedSeats,
+      seatKeys,
+      originalPrice: totalOriginalPrice,
+      resalePrice: totalResalePrice,
       sellerAmount,
       platformCommission,
       movieTitle,
       cinemaName,
       showTime: booking.show.startTime,
-      seats: booking.seats,
       listingMonth,
       seatCategory,
     });
 
-    await Booking.findByIdAndUpdate(booking._id, { bookingStatus: "resale_listed" });
+    // ========== UPDATE BOOKING STATUS ==========
+    await Booking.findByIdAndUpdate(booking._id, {
+      bookingStatus: "resale_listed"
+    });
 
+    // ========== CREATE NOTIFICATION ==========
     await createNotification(
       sellerId,
-      "RESALE_LISTED",
-      `Your ticket for "${movieTitle}" is now listed for resale.`,
+      "system",
+      `Your ${seatCount} ticket(s) for "${movieTitle}" (${selectedSeats.join(", ")}) is now listed for resale.`,
       "/dashboard"
     );
 
@@ -108,7 +178,7 @@ const sellerAmount = resalePrice - platformCommission;
   } catch (err) {
     console.error("createListing error:", err);
     if (err.code === 11000) {
-      return res.status(400).json({ success: false, message: "This ticket is already listed for resale" });
+      return res.status(400).json({ success: false, message: "One or more selected seats are already listed for resale" });
     }
     return res.status(500).json({ success: false, message: "Failed to create listing" });
   }
@@ -156,10 +226,32 @@ exports.cancelListing = async (req, res) => {
       return res.status(404).json({ success: false, message: "Active listing not found" });
     }
 
-    await ResaleListing.findByIdAndUpdate(listingId, { status: "cancelled" });
-    await Booking.findByIdAndUpdate(listing.bookingId, { bookingStatus: "confirmed" });
+    // ========== UPDATE LISTING STATUS ==========
+    await ResaleListing.findByIdAndUpdate(listingId, {
+      status: "cancelled",
+      cancelledAt: new Date(),
+    });
 
-    return res.json({ success: true, message: "Listing cancelled" });
+    // ========== REVERT BOOKING STATUS ONLY IF NO OTHER ACTIVE RESALE LISTINGS ==========
+    const otherActiveListings = await ResaleListing.countDocuments({
+      bookingId: listing.bookingId,
+      status: "active",
+      _id: { $ne: listingId },
+    });
+
+    if (otherActiveListings === 0) {
+      await Booking.findByIdAndUpdate(listing.bookingId, { bookingStatus: "confirmed" });
+    }
+
+    // ========== CREATE NOTIFICATION ==========
+    await createNotification(
+      req.user.id,
+      "system",
+      `Your resale listing for seats ${listing.seats.join(", ")} in "${listing.movieTitle}" has been cancelled.`,
+      "/dashboard"
+    );
+
+    return res.json({ success: true, message: "Listing cancelled successfully" });
   } catch (err) {
     console.error("cancelListing error:", err);
     return res.status(500).json({ success: false, message: "Failed to cancel listing" });
@@ -229,11 +321,13 @@ exports.verifyBuyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing payment data" });
     }
 
+    // ========== FETCH & VERIFY LISTING ==========
     const listing = await ResaleListing.findById(listingId);
     if (!listing || listing.status !== "active") {
       return res.status(404).json({ success: false, message: "Listing no longer available" });
     }
 
+    // ========== VERIFY SIGNATURE ==========
     const expected = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -243,6 +337,7 @@ exports.verifyBuyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
+    // ========== FETCH ORIGINAL BOOKING ==========
     const originalBooking = await Booking.findById(listing.bookingId)
       .populate({ path: "show", populate: { path: "movie", select: "title" } });
 
@@ -250,57 +345,109 @@ exports.verifyBuyPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: "Original booking not found" });
     }
 
+    // ========== COLLISION PREVENTION: Check if seats already sold ==========
+    const conflictingListing = await ResaleListing.findOne({
+      bookingId: listing.bookingId,
+      seats: { $in: listing.seats },
+      status: "sold",
+      _id: { $ne: listingId },
+    });
+
+    if (conflictingListing) {
+      return res.status(409).json({
+        success: false,
+        message: "Seat is no longer available",
+      });
+    }
+
+    const claimedListing = await ResaleListing.findOneAndUpdate(
+      {
+        _id: listingId,
+        status: "active",
+        showTime: { $gt: new Date(Date.now() + 3600000) },
+      },
+      {
+        $set: {
+          status: "sold",
+          buyer: buyerId,
+          soldAt: new Date(),
+          transferred: true,
+        },
+      },
+      { new: true }
+    );
+
+    if (!claimedListing) {
+      return res.status(409).json({
+        success: false,
+        message: "Seat is no longer available",
+      });
+    }
+
+    // ========== CREATE NEW BOOKING FOR BUYER (with only resold seats) ==========
     const transactionId = buildResaleTransactionId();
 
-    const updatedBooking =
-  await Booking.findByIdAndUpdate(
-    originalBooking._id,
-    {
+    const newBooking = await Booking.create({
       user: buyerId,
+      show: originalBooking.show._id,
+      seats: listing.seats,
+      totalPrice: listing.resalePrice,
       transactionId,
       paymentStatus: "paid",
       bookingStatus: "confirmed",
       isResaleBooking: true,
-originalBookingId: originalBooking._id,
-    },
-    { new: true }
-  );
+      originalBookingId: originalBooking._id,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+    });
 
-    // await Booking.findByIdAndUpdate(originalBooking._id, {
-//   bookingStatus: "transferred_out",
-// });
+    // ========== UPDATE ORIGINAL BOOKING OWNERSHIP ==========
+    const remainingSeats = (originalBooking.seats || []).filter(
+      (seat) => !listing.seats.includes(seat)
+    );
 
-    await ResaleListing.findByIdAndUpdate(
-  listingId,
-  {
-    status: "sold",
-    buyer: buyerId,
-    soldAt: new Date(),
-    transferred: true,
-    transferBookingId: updatedBooking._id,
-  }
-);
+    const otherActiveListings = await ResaleListing.countDocuments({
+      bookingId: originalBooking._id,
+      status: "active",
+    });
 
+    await Booking.findByIdAndUpdate(originalBooking._id, {
+      seats: remainingSeats,
+      bookingStatus:
+        remainingSeats.length === 0
+          ? "transferred_out"
+          : otherActiveListings > 0
+          ? "resale_listed"
+          : "confirmed",
+    });
+
+    await ResaleListing.findByIdAndUpdate(listingId, {
+      transferBookingId: newBooking._id,
+    });
+
+    // ========== CREATE NOTIFICATIONS ==========
     const movieTitle = originalBooking.show?.movie?.title || "Movie";
+    const seatsDisplay = listing.seats.join(", ");
 
     await createNotification(
       listing.seller,
-      "RESALE_SOLD",
-      `Your resale ticket for "${movieTitle}" was sold. You earned ₹${listing.sellerAmount}.`,
-      "/dashboard"
-    );
-    await createNotification(
-      buyerId,
-      "RESALE_BOUGHT",
-      `You purchased a resale ticket for "${movieTitle}". Check your dashboard.`,
+      "system",
+      `Your resale ticket for "${movieTitle}" (${seatsDisplay}) was sold. You earned ₹${listing.sellerAmount}. Platform fee: ₹${listing.platformCommission}.`,
       "/dashboard"
     );
 
-   return res.json({
-  success: true,
-  bookingId: updatedBooking._id,
-  transactionId
-});
+    await createNotification(
+      buyerId,
+      "booking",
+      `You purchased a resale ticket for "${movieTitle}" (${seatsDisplay}) for ₹${listing.resalePrice}. Check your dashboard.`,
+      "/dashboard"
+    );
+
+    return res.json({
+      success: true,
+      bookingId: newBooking._id,
+      transactionId,
+    });
   } catch (err) {
     console.error("verifyBuyPayment error:", err);
     return res.status(500).json({ success: false, message: "Payment verification failed" });

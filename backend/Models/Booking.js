@@ -93,9 +93,18 @@ const bookingSchema = new mongoose.Schema(
     },
     // For resale tracking
     isResaleBooking: {
-    type: Boolean,
-    default: false,
-    index: true,
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    // Track individual seat ownership for resale scenarios
+    // Maps seat to user who owns it (used when booking is partially transferred)
+    seatOwnership: {
+      type: Map,
+      of: mongoose.Schema.Types.ObjectId,
+      default: null,
+      sparse: true,
     },
   },
   {

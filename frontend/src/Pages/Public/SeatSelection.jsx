@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 
 import Navbar from "../../Components/Navbar";
+import SeatLegend from "../../Components/SeatLegend";
+import ResaleInfoCard from "../../Components/ResaleInfoCard";
 
 const SEAT_LAYOUT = [
   {
@@ -73,6 +75,9 @@ const SeatSelection = () => {
   const [bookedSeats, setBookedSeats] =
     useState([]);
 
+  const [resaleSeats, setResaleSeats] =
+    useState([]);
+
   const [loading, setLoading] = useState(true);
 
   const [isProcessing, setIsProcessing] =
@@ -89,13 +94,14 @@ const SeatSelection = () => {
             API.get(`/shows/${showId}`),
 
             API.get(
-              `/bookings/booked-seats/${showId}`
+              `/bookings/booked-seats/${showId}?includeResale=true`
             ),
           ]);
 
         setShow(showRes.data);
 
-        setBookedSeats(bookedRes.data || []);
+        setBookedSeats(bookedRes.data?.bookedSeats || bookedRes.data || []);
+        setResaleSeats(bookedRes.data?.resaleSeats || []);
       } catch (err) {
         console.error(err);
 
@@ -113,10 +119,11 @@ const SeatSelection = () => {
     const interval = setInterval(async () => {
       try {
         const res = await API.get(
-          `/bookings/booked-seats/${showId}`
+          `/bookings/booked-seats/${showId}?includeResale=true`
         );
 
-        setBookedSeats(res.data || []);
+        setBookedSeats(res.data?.bookedSeats || res.data || []);
+        setResaleSeats(res.data?.resaleSeats || []);
       } catch (err) {
         console.error(err);
       }
@@ -563,6 +570,11 @@ const SeatSelection = () => {
                                     seat
                                   );
 
+                                const isResale =
+                                  resaleSeats.includes(
+                                    seat
+                                  );
+
                                 const isSelected =
                                   selectedSeats.includes(
                                     seat
@@ -584,27 +596,38 @@ const SeatSelection = () => {
 
                                     <button
                                       disabled={
-                                        isBooked
+                                        isBooked && !isResale
                                       }
-                                      onClick={() =>
+                                      onClick={() => {
+                                        if (isResale) {
+                                          navigate("/resale");
+                                          return;
+                                        }
+
                                         handleSeatClick(
                                           seat,
                                           seats
-                                        )
-                                      }
+                                        );
+                                      }}
                                       className={`
-                                      w-9 h-9 rounded-t-xl rounded-b-md flex items-center justify-center transition-all duration-200 border
+                                      w-9 h-9 flex items-center justify-center transition-all duration-200 border
 
                                       ${
-                                        isBooked
-                                          ? "bg-gray-700 border-gray-700 opacity-40 cursor-not-allowed"
+                                        isResale
+                                          ? "rounded-md bg-black border-[#f5c518] text-[#f5c518] cursor-pointer hover:bg-[#f5c518]/10 shadow-[0_0_14px_rgba(245,197,24,0.18)]"
+                                          : isBooked
+                                          ? "rounded-t-xl rounded-b-md bg-gray-700 border-gray-700 opacity-40 cursor-not-allowed"
                                           : isSelected
-                                          ? "bg-[#f5c518] border-[#f5c518] text-black scale-110 shadow-[0_0_20px_rgba(245,197,24,0.5)]"
-                                          : "bg-[#1a1a1a] border-[#f5c518]/20 text-[#f5c518] hover:bg-[#f5c518]/20 hover:border-[#f5c518]"
+                                          ? "rounded-t-xl rounded-b-md bg-[#f5c518] border-[#f5c518] text-black scale-110 shadow-[0_0_20px_rgba(245,197,24,0.5)]"
+                                          : "rounded-t-xl rounded-b-md bg-[#1a1a1a] border-[#f5c518]/20 text-[#f5c518] hover:bg-[#f5c518]/20 hover:border-[#f5c518] cursor-pointer"
                                       }
                                     `}
                                     >
-                                      <Sofa size={14} />
+                                      {isResale ? (
+                                        <span className="text-sm font-black leading-none">R</span>
+                                      ) : (
+                                        <Sofa size={14} />
+                                      )}
                                     </button>
                                   </React.Fragment>
                                 );
@@ -627,22 +650,12 @@ const SeatSelection = () => {
         </div>
 
         {/* LEGEND */}
-        <div className="flex flex-wrap justify-center gap-8 mt-16 text-sm">
+        <div className="mt-16">
+          <SeatLegend showResaleLegend={true} />
+        </div>
 
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-[#1a1a1a] border border-[#f5c518]/20" />
-            Available
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-[#f5c518]" />
-            Selected
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-gray-700" />
-            Sold
-          </div>
+        <div className="mt-8">
+          <ResaleInfoCard compact={true} />
         </div>
 
         {/* SUMMARY */}

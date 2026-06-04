@@ -11,15 +11,71 @@ import {
   Ticket,
   MapPin,
   ChevronRight,
+  AlertCircle,
+  X,
 } from "lucide-react";
+import ResaleSummaryCard from "../../Components/ResaleSummaryCard";
+import ResaleInfoCard from "../../Components/ResaleInfoCard";
 
-const getBookingCategory = (booking) => {
-  const category = booking.show?.movie?.category;
-  return typeof category === "object" ? category?.name : category;
-};
+  const getBookingCategory = (booking) => {
+    const category = booking.show?.movie?.category;
+    return typeof category === "object" ? category?.name : category;
+  };
+
+  const getStatusBadge = (bookingStatus) => {
+    const statusConfig = {
+      confirmed: {
+        bg: "bg-green-500/10",
+        border: "border-green-500/20",
+        text: "text-green-500",
+        label: "Confirmed",
+      },
+      resale_listed: {
+        bg: "bg-blue-500/10",
+        border: "border-blue-500/20",
+        text: "text-blue-500",
+        label: "Listed for Resale",
+      },
+      resale_sold: {
+        bg: "bg-yellow-500/10",
+        border: "border-yellow-500/20",
+        text: "text-yellow-500",
+        label: "Resale Sold",
+      },
+      transferred_out: {
+        bg: "bg-purple-500/10",
+        border: "border-purple-500/20",
+        text: "text-purple-500",
+        label: "Transferred Out",
+      },
+      transferred_in: {
+        bg: "bg-cyan-500/10",
+        border: "border-cyan-500/20",
+        text: "text-cyan-500",
+        label: "Transferred In",
+      },
+      cancelled: {
+        bg: "bg-red-500/10",
+        border: "border-red-500/20",
+        text: "text-red-500",
+        label: "Cancelled",
+      },
+    };
+
+    const config = statusConfig[bookingStatus] || statusConfig.confirmed;
+
+    return (
+      <span
+        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border ${config.bg} ${config.border} ${config.text}`}
+      >
+        {config.label}
+      </span>
+    );
+  };
 
 const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
+  const [resaleListings, setResaleListings] = useState([]);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -27,35 +83,108 @@ const Dashboard = () => {
     email: user.email,
   });
   const [error, setError] = useState("");
+  const [showResaleModal, setShowResaleModal] = useState(false);
+  const [resaleBookingId, setResaleBookingId] = useState(null);
+  const [selectedResaleSeats, setSelectedResaleSeats] = useState([]);
+  const [resaleProcessing, setResaleProcessing] = useState(false);
+
+  const activeResaleSeats = resaleListings
+    .filter(
+      (listing) =>
+        listing.status === "active" &&
+        String(listing.bookingId?._id || listing.bookingId) === String(resaleBookingId)
+    )
+    .flatMap((listing) => listing.seats || []);
+
+  const getResaleSeatPrice = (seat) => {
+    const row = String(seat || "")[0]?.toUpperCase();
+    if (["A", "B"].includes(row)) return 235;
+    if (["C", "D", "E", "F"].includes(row)) return 175;
+    if (["G", "H", "I", "J"].includes(row)) return 115;
+    return 0;
+  };
+
+  const resalePreviewTotal = selectedResaleSeats.reduce(
+    (sum, seat) => sum + getResaleSeatPrice(seat),
+    0
+  );
 
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await API.get("/bookings/history");
-        setBookings(data);
+        const [bookingsRes, resaleRes] = await Promise.all([
+          API.get("/bookings/history"),
+          API.get("/resale/mine"),
+        ]);
+
+        // Filter bookings to last 30 days
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const filteredBookings = (bookingsRes.data || []).filter(
+          (booking) => new Date(booking.createdAt) >= thirtyDaysAgo
+        );
+
+        setBookings(filteredBookings);
+        setResaleListings(resaleRes.data?.listings || []);
       } catch (error) {
-        console.error("Failed to fetch bookings:", error);
+        console.error("Failed to fetch data:", error);
         toast.error("Failed to load booking history");
       }
     };
-    fetchBookings();
+    fetchData();
   }, []);
-  const handleListForResale = async (bookingId) => {
-  try {
-    await API.post("/resale/list", {
-      bookingId,
-    });
+  const handleListForResale = (bookingId, bookingSeats) => {
+    setResaleBookingId(bookingId);
+    setSelectedResaleSeats([]);
+    setShowResaleModal(true);
+  };
 
-    toast.success("Ticket listed for resale!");
-
-    const refreshed = await API.get("/bookings/history");
-    setBookings(refreshed.data);
-  } catch (err) {
-    toast.error(
-      err.response?.data?.message || "Failed to list ticket for resale"
+  const toggleResaleSeat = (seat) => {
+    setSelectedResaleSeats((prev) =>
+      prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]
     );
-  }
-};
+  };
+
+  const submitResaleList = async () => {
+    if (selectedResaleSeats.length === 0) {
+      toast.error("Select at least one seat to list for resale");
+      return;
+    }
+
+    setResaleProcessing(true);
+    const toastId = toast.loading("Listing for resale...");
+
+    try {
+      await API.post("/resale/list", {
+        bookingId: resaleBookingId,
+        selectedSeats: selectedResaleSeats,
+      });
+
+      toast.success("Ticket listed for resale!", { id: toastId });
+      setShowResaleModal(false);
+      setSelectedResaleSeats([]);
+
+      // Refresh data
+      const [bookingsRes, resaleRes] = await Promise.all([
+        API.get("/bookings/history"),
+        API.get("/resale/mine"),
+      ]);
+
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const filteredBookings = (bookingsRes.data || []).filter(
+        (booking) => new Date(booking.createdAt) >= thirtyDaysAgo
+      );
+
+      setBookings(filteredBookings);
+      setResaleListings(resaleRes.data?.listings || []);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Failed to list ticket for resale",
+        { id: toastId }
+      );
+    } finally {
+      setResaleProcessing(false);
+    }
+  };
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     
@@ -189,10 +318,58 @@ const Dashboard = () => {
 
         {/* Right Content - My Bookings */}
         <main className="flex-1">
+          {/* Resale Summary Card */}
+          <div className="mb-12">
+            <ResaleSummaryCard listings={resaleListings} />
+          </div>
+
+          {/* Resale Info Card */}
+          <div className="mb-12">
+            <ResaleInfoCard compact={true} />
+          </div>
+
+          {resaleListings.some((listing) => listing.status === "active") && (
+            <div className="mb-12 bg-[#1a1a1a] rounded-[24px] p-5 sm:p-6 border border-white/10">
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <h2 className="text-lg font-black uppercase tracking-tighter">
+                  Active <span className="text-[#f5c518]">Resale Listings</span>
+                </h2>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  {resaleListings.filter((listing) => listing.status === "active").length} active
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {resaleListings
+                  .filter((listing) => listing.status === "active")
+                  .map((listing) => (
+                    <div
+                      key={listing._id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl bg-white/5 border border-white/5 p-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-black text-white truncate">
+                          {listing.movieTitle}
+                        </p>
+                        <p className="text-xs text-gray-500 font-bold mt-1">
+                          Seats {listing.seats?.join(", ")} · ₹{listing.resalePrice}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-12">
-            <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter">
-              My <span className="text-[#f5c518]">Bookings</span>
-            </h1>
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter">
+                My <span className="text-[#f5c518]">Bookings</span>
+              </h1>
+              <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">
+                Last 30 days
+              </p>
+            </div>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
               {bookings.length} bookings
             </p>
@@ -228,9 +405,7 @@ const Dashboard = () => {
                           {getBookingCategory(booking) || "Uncategorized"}
                         </p>
                       </div>
-                      <span className="px-4 py-1.5 bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-500/20 shrink-0">
-                        Confirmed
-                      </span>
+                      {getStatusBadge(booking.bookingStatus)}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
@@ -282,17 +457,21 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-6">
-  <p className="text-2xl font-black text-[#f5c518]">
-    ₹ {booking.totalPrice?.toFixed(0)}
-  </p>
+                  <p className="text-2xl font-black text-[#f5c518]">
+                    ₹ {booking.totalPrice?.toFixed(0)}
+                  </p>
 
-  <button
-  onClick={() => handleListForResale(booking._id)}
-  className="px-4 py-2 bg-[#f5c518] text-black rounded-xl font-bold text-sm"
->
-  List For Resale
-</button>
-</div>
+                    {booking.bookingStatus === "confirmed" && (
+                      <button
+                        onClick={() =>
+                          handleListForResale(booking._id, booking.seats)
+                        }
+                        className="px-4 py-2 bg-[#f5c518] text-black rounded-xl font-bold text-sm hover:bg-[#ffe066] hover:shadow-[0_0_18px_rgba(245,197,24,0.3)] transition-all active:scale-95 cursor-pointer"
+                      >
+                        List For Resale
+                      </button>
+                    )}
+                  </div>
 
                 </div>
               </div>
@@ -317,6 +496,94 @@ const Dashboard = () => {
             )}
           </div>
         </main>
+
+        {/* Resale Seat Selection Modal */}
+        {showResaleModal && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1a1a1a] rounded-[24px] max-w-2xl w-full p-6 sm:p-8 border border-white/10">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                    Select Seats to Resale
+                  </h2>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
+                    Choose which seats you want to list
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowResaleModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-[#f5c518]/5 border border-[#f5c518]/20 rounded-xl p-4 mb-6">
+                <p className="text-xs text-gray-300 font-bold">
+                  <AlertCircle className="inline mr-2" size={14} />
+                  You can list partial seats. Pricing is calculated per selected seat.
+                </p>
+              </div>
+
+              {/* Seat Selection */}
+              <div className="mb-8">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+                  Your Seats
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {resaleBookingId &&
+                    bookings
+                      .find((b) => b._id === resaleBookingId)
+                      ?.seats?.map((seat) => {
+                        const alreadyListed = activeResaleSeats.includes(seat);
+
+                        return (
+                          <button
+                            key={seat}
+                            type="button"
+                            disabled={alreadyListed}
+                            onClick={() => toggleResaleSeat(seat)}
+                            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all cursor-pointer disabled:cursor-not-allowed ${
+                              alreadyListed
+                                ? "bg-gray-700/40 text-gray-500 border border-gray-700/50"
+                                : selectedResaleSeats.includes(seat)
+                                ? "bg-[#f5c518] text-black border border-[#f5c518] shadow-[0_0_18px_rgba(245,197,24,0.3)]"
+                                : "bg-white/5 text-white border border-white/10 hover:border-[#f5c518] hover:text-[#f5c518] hover:bg-[#f5c518]/10"
+                            }`}
+                          >
+                            {seat}
+                          </button>
+                        );
+                      })}
+                </div>
+                {selectedResaleSeats.length > 0 && (
+                  <p className="text-xs text-[#f5c518] font-bold mt-3 break-words">
+                    Selected: {selectedResaleSeats.join(", ")} · Resale total ₹{resalePreviewTotal}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowResaleModal(false)}
+                  className="flex-1 px-4 py-3 bg-white/5 text-white rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-white/10 transition-colors border border-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitResaleList}
+                  disabled={selectedResaleSeats.length === 0 || resaleProcessing}
+                  className="flex-1 px-4 py-3 bg-[#f5c518] text-black rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-[#f5c518]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                >
+                  {resaleProcessing ? "Listing..." : "List for Resale"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

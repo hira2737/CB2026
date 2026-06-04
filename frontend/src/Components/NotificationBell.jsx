@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import API from "../config/api";
 
 // ── Time ago helper ────────────────────────────────────────────────────────────
@@ -14,16 +15,17 @@ const timeAgo = (dateStr) => {
 // ── Notification type icon map ────────────────────────────────────────────────
 const typeLabel = (type) => {
   const map = {
-    login:   "👤",
-    booking: "🎟",
-    payment: "💳",
-    system:  "🔔",
+    login: "LOGIN",
+    booking: "BOOKING",
+    payment: "PAYMENT",
+    system: "SYSTEM",
   };
-  return map[type] || "🔔";
+  return map[type] || "SYSTEM";
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 const NotificationBell = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -85,6 +87,17 @@ const NotificationBell = () => {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      await handleMarkOne(notification._id);
+    }
+
+    if (notification.link) {
+      setOpen(false);
+      navigate(notification.link);
+    }
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="relative" ref={dropdownRef}>
@@ -107,7 +120,7 @@ const NotificationBell = () => {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-11 z-[9990] w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl shadow-black/70">
+        <div className="absolute right-0 top-11 z-[9990] w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl shadow-black/70">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">
@@ -131,16 +144,15 @@ const NotificationBell = () => {
                 <p className="text-xs text-gray-600">No notifications yet</p>
               </div>
             ) : (
-              notifications.slice(0, 10).map((n) => (
+              notifications.slice(0, 20).map((n) => (
                 <button
                   key={n._id}
-                  onClick={() => !n.isRead && handleMarkOne(n._id)}
+                  onClick={() => handleNotificationClick(n)}
                   className={`flex w-full gap-3 border-b border-white/5 px-4 py-3 text-left transition-colors hover:bg-white/5 ${
                     !n.isRead ? "bg-[#f5c518]/5" : ""
                   }`}
                 >
-                  {/* Emoji icon */}
-                  <span className="mt-0.5 shrink-0 text-base">
+                  <span className="mt-0.5 shrink-0 rounded-full border border-[#f5c518]/20 px-2 py-1 text-[8px] font-black tracking-widest text-[#f5c518]">
                     {typeLabel(n.type)}
                   </span>
 
@@ -166,7 +178,7 @@ const NotificationBell = () => {
           {notifications.length > 0 && (
             <div className="border-t border-white/10 px-4 py-2.5 text-center">
               <p className="text-[10px] text-gray-700">
-                Showing latest {Math.min(notifications.length, 10)} notifications
+                Showing latest {Math.min(notifications.length, 20)} notifications
               </p>
             </div>
           )}

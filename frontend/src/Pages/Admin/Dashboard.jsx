@@ -8,6 +8,7 @@ import CategoriesTab from "./components/tabs/CategoriesTab";
 import MoviesTab from "./components/tabs/MoviesTab";
 import CinemasTab from "./components/tabs/CinemasTab";
 import ShowsTab from "./components/tabs/ShowsTab";
+import ResaleTab from "./components/tabs/ResaleTab";
 import ConfirmModal from "./components/ConfirmModal";
 import {
   durationPartsToMinutes,
@@ -24,6 +25,7 @@ import {
   Plus,
   TrendingUp,
   Star,
+  TrendingDown,
 } from "lucide-react";
 
 // ── Reviews Tab (inline panel) ─────────────────────────────────────────────
@@ -31,6 +33,7 @@ const ReviewsTab = () => {
   const [reviews, setReviews] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState("");
+  const [deleteReview, setDeleteReview] = React.useState(null);
 
   React.useEffect(() => {
     API.get("/reviews/admin/all")
@@ -42,10 +45,10 @@ const ReviewsTab = () => {
   }, []);
 
   const handleDelete = async (reviewId) => {
-    if (!window.confirm("Delete this review? This cannot be undone.")) return;
     try {
       await API.delete(`/reviews/${reviewId}`);
       setReviews((prev) => prev.filter((r) => r._id !== reviewId));
+      setDeleteReview(null);
       toast.success("Review deleted");
     } catch {
       toast.error("Failed to delete review");
@@ -203,7 +206,7 @@ const ReviewsTab = () => {
                   </td>
                   <td className="px-5 py-4">
                     <button
-                      onClick={() => handleDelete(r._id)}
+                      onClick={() => setDeleteReview(r._id)}
                       className="text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
                     >
                       Delete
@@ -215,6 +218,15 @@ const ReviewsTab = () => {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteReview)}
+        title="Delete review"
+        message="This will permanently remove this review."
+        confirmLabel="Delete"
+        onConfirm={() => handleDelete(deleteReview)}
+        onCancel={() => setDeleteReview(null)}
+      />
     </div>
   );
 };
@@ -298,6 +310,7 @@ const AdminDashboard = () => {
   const [shows, setShows] = useState([]);
   const [screens, setScreens] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [resaleStats, setResaleStats] = useState({});
 
   const [isLoadingData, setIsLoadingData] = useState(true);
 
@@ -392,6 +405,14 @@ const AdminDashboard = () => {
         }
       })
     );
+
+    try {
+      const { data } = await API.get("/resale/admin/all");
+      setResaleStats(data.stats || {});
+    } catch (error) {
+      console.error("Failed to fetch resale stats:", error);
+      setResaleStats({});
+    }
   };
 
   useEffect(() => {
@@ -872,7 +893,7 @@ const AdminDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-10 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
         {[
           {
             label: "Total Movies",
@@ -902,6 +923,13 @@ const AdminDashboard = () => {
             color: "text-rose-500",
             bg: "bg-rose-500/10",
           },
+          {
+            label: "Platform Revenue",
+            value: `₹${resaleStats.totalCommission || 0}`,
+            icon: TrendingDown,
+            color: "text-[#f5c518]",
+            bg: "bg-yellow-400/10",
+          },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -914,7 +942,7 @@ const AdminDashboard = () => {
             </div>
 
             <div>
-              <p className="text-3xl font-black text-white">
+              <p className="text-3xl font-black text-white break-words">
                 {stat.value}
               </p>
 
@@ -1218,12 +1246,20 @@ const AdminDashboard = () => {
           />
 
           <TabButton
-  id="reviews"
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  icon={Star}
-  label="Reviews"
-/>
+            id="reviews"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            icon={Star}
+            label="Reviews"
+          />
+
+          <TabButton
+            id="resale"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            icon={TrendingDown}
+            label="Resale Tracking"
+          />
         </div>
 
         <div>
@@ -1234,6 +1270,7 @@ const AdminDashboard = () => {
           {activeTab === "bookings" && renderBookings()}
           {activeTab === "categories" && renderCategories()}
           {activeTab === "reviews" && <ReviewsTab />}
+          {activeTab === "resale" && <ResaleTab />}
         </div>
       </div>
 

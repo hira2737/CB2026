@@ -9,9 +9,12 @@ const createNotification = async (
   try {
     if (!userId || !type || !message) return null;
 
+    const allowedTypes = new Set(["login", "booking", "payment", "system"]);
+    const normalizedType = allowedTypes.has(type) ? type : "system";
+
     return await Notification.create({
       user: userId,
-      type,
+      type: normalizedType,
       message,
       link,
     });

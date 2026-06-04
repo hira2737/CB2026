@@ -58,7 +58,7 @@ const Navbar = () => {
           >
             Movies
           </button>
-          {user && user.role !== "admin" && (
+          {user && (
             <Link
               to="/bookings"
               className={navClass(isActive(["/bookings", "/dashboard"]))}

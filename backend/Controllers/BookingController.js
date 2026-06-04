@@ -1,6 +1,7 @@
 const Booking = require("../Models/Booking");
 const SeatLock = require("../Models/SeatLock");
 const Show = require("../Models/Show");
+const ResaleListing = require("../Models/ResaleListing");
 const mongoose = require("mongoose");
 const razorpay = require("../config/RazorpayConfig");
 const crypto = require("crypto");
@@ -527,6 +528,7 @@ exports.getBookingHistory = async (
 exports.getBookedSeats = async (req, res) => {
   try {
     const { showId } = req.params;
+    const includeResale = req.query.includeResale === "true";
 
     const activeShow = await Show.findOne({
       _id: showId,
@@ -544,8 +546,18 @@ exports.getBookedSeats = async (req, res) => {
     const confirmedBookings =
       await Booking.find({
         show: showId,
-        bookingStatus: "confirmed",
+        bookingStatus: { $in: ["confirmed", "resale_listed"] },
       });
+
+    const bookingIds = confirmedBookings.map((booking) => booking._id);
+
+    const activeResaleListings = bookingIds.length
+      ? await ResaleListing.find({
+          bookingId: { $in: bookingIds },
+          status: "active",
+          showTime: { $gt: new Date(Date.now() + 3600000) },
+        }).select("seats")
+      : [];
 
     const activeLocks = await SeatLock.find({
       show: showId,
@@ -562,6 +574,17 @@ exports.getBookedSeats = async (req, res) => {
         ),
       ]),
     ];
+
+    const resaleSeats = [
+      ...new Set(activeResaleListings.flatMap((listing) => listing.seats || [])),
+    ];
+
+    if (includeResale) {
+      return res.json({
+        bookedSeats,
+        resaleSeats,
+      });
+    }
 
     return res.json(bookedSeats);
   } catch (err) {

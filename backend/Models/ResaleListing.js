@@ -6,7 +6,8 @@ const resaleListingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
       required: true,
-      unique: true,
+      // REMOVED: unique: true - Now supports multiple resale listings per booking (partial seats)
+      index: true,
     },
 
     seller: {
@@ -21,11 +22,27 @@ const resaleListingSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Specific seats being resold from this booking
+    seats: [
+      {
+        type: String,
+      },
+    ],
+
+    seatKeys: [
+      {
+        type: String,
+        index: true,
+      },
+    ],
+
+    // Tracking original price per seat for commission calculation
     originalPrice: {
       type: Number,
       required: true,
     },
 
+    // Price per seat for resale
     resalePrice: {
       type: Number,
       required: true,
@@ -56,17 +73,11 @@ const resaleListingSchema = new mongoose.Schema(
       required: true,
     },
 
-    seats: [
-      {
-        type: String,
-      },
-    ],
-
     seatCategory: {
       type: String,
-      enum: ["PLATINUM", "GOLD", "SILVER"],
+      enum: ["PLATINUM", "GOLD", "SILVER", "MIXED"],
       required: true,
-   },
+    },
 
     // ACTIVE | SOLD | EXPIRED | CANCELLED
     status: {
@@ -79,7 +90,7 @@ const resaleListingSchema = new mongoose.Schema(
       type: String,
       default: null,
       index: true,
-   },
+    },
 
     soldAt: {
       type: Date,
@@ -119,10 +130,24 @@ const resaleListingSchema = new mongoose.Schema(
   }
 );
 
+// INDEXES for performance and duplicate prevention
 resaleListingSchema.index({ seller: 1, listingMonth: 1 });
 resaleListingSchema.index({ status: 1, showTime: 1 });
 resaleListingSchema.index({ buyer: 1 });
 resaleListingSchema.index({ soldAt: 1 });
+
+// Prevent duplicate resale listings for same seats
+// Each value is `${bookingId}:${seat}` and must be unique while active/sold.
+resaleListingSchema.index(
+  { seatKeys: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ["active", "sold"] },
+      seatKeys: { $exists: true },
+    },
+  }
+);
 
 module.exports = mongoose.model(
   "ResaleListing",
