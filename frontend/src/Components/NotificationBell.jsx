@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import {
+  Bell,
+  User,
+  Ticket,
+  CreditCard,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../config/api";
 
@@ -12,15 +17,17 @@ const timeAgo = (dateStr) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
-// ── Notification type icon map ────────────────────────────────────────────────
-const typeLabel = (type) => {
-  const map = {
-    login:   "👤",
-    booking: "🎟",
-    payment: "💳",
-    system:  "🔔",
-  };
-  return map[type] || "🔔";
+const getTypeIcon = (type) => {
+  switch (type) {
+    case "login":
+      return <User size={14} />;
+    case "booking":
+      return <Ticket size={14} />;
+    case "payment":
+      return <CreditCard size={14} />;
+    default:
+      return <Bell size={14} />;
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +122,7 @@ const NotificationBell = () => {
           <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5c518] px-1 text-[9px] font-black text-black leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
+          
         )}
       </button>
 
@@ -152,10 +160,11 @@ const NotificationBell = () => {
                     !n.isRead ? "bg-[#f5c518]/5" : ""
                   }`}
                 >
-                  <span className="mt-0.5 shrink-0 rounded-full border border-[#f5c518]/20 px-2 py-1 text-[8px] font-black tracking-widest text-[#f5c518]">
-                    {typeLabel(n.type)}
-                  </span>
-
+        
+                  <div className="mt-0.5 shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-[#f5c518]/10 border border-[#f5c518]/20 text-[#f5c518]">
+                     {getTypeIcon(n.type)}
+                  </div>
+                  
                   <div className="min-w-0 flex-1">
                     <p className="text-xs leading-relaxed text-white break-words">
                       {n.message}
