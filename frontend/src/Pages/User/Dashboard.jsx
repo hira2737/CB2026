@@ -54,12 +54,6 @@ import ResaleInfoCard from "../../Components/ResaleInfoCard";
         text: "text-cyan-500",
         label: "Transferred In",
       },
-      cancelled: {
-        bg: "bg-red-500/10",
-        border: "border-red-500/20",
-        text: "text-red-500",
-        label: "Cancelled",
-      },
     };
 
     const config = statusConfig[bookingStatus] || statusConfig.confirmed;
@@ -303,13 +297,7 @@ const Dashboard = () => {
                   >
                     Save Changes
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="w-full py-4 text-gray-500 hover:text-white uppercase tracking-[0.2em] text-[10px] font-black transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  
                 </div>
               </form>
             )}

@@ -15,12 +15,12 @@ const timeAgo = (dateStr) => {
 // ── Notification type icon map ────────────────────────────────────────────────
 const typeLabel = (type) => {
   const map = {
-    login: "LOGIN",
-    booking: "BOOKING",
-    payment: "PAYMENT",
-    system: "SYSTEM",
+    login:   "👤",
+    booking: "🎟",
+    payment: "💳",
+    system:  "🔔",
   };
-  return map[type] || "SYSTEM";
+  return map[type] || "🔔";
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

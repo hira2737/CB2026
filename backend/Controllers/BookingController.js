@@ -486,39 +486,27 @@ exports.paymentFailed = async (req, res) => {
 // ======================================================
 // USER BOOKING HISTORY
 // ======================================================
-exports.getBookingHistory = async (
-  req,
-  res
-) => {
+exports.getBookingHistory = async (req, res) => {
   try {
+    // Show only last 30 days in UI — DB keeps full history forever
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
     const bookings = await Booking.find({
       user: req.user.id,
+      createdAt: { $gte: thirtyDaysAgo },
     })
       .populate({
         path: "show",
         populate: [
-          {
-            path: "movie",
-            populate: {
-              path: "category",
-            },
-          },
-          {
-            path: "screen",
-            populate: {
-              path: "cinema",
-            },
-          },
+          { path: "movie", populate: { path: "category" } },
+          { path: "screen", populate: { path: "cinema" } },
         ],
       })
       .sort({ createdAt: -1 });
 
     return res.json(bookings);
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -543,14 +531,15 @@ exports.getBookedSeats = async (req, res) => {
       });
     }
 
-    const confirmedBookings =
-      await Booking.find({
-        show: showId,
-        bookingStatus: { $in: ["confirmed", "resale_listed"] },
-      });
+    // Get all confirmed bookings (not resale_listed — those seats may partially be in resale)
+    const confirmedBookings = await Booking.find({
+      show: showId,
+      bookingStatus: { $in: ["confirmed", "resale_listed"] },
+    });
 
-    const bookingIds = confirmedBookings.map((booking) => booking._id);
+    const bookingIds = confirmedBookings.map((b) => b._id);
 
+    // Get active resale listings for this show
     const activeResaleListings = bookingIds.length
       ? await ResaleListing.find({
           bookingId: { $in: bookingIds },
@@ -559,39 +548,38 @@ exports.getBookedSeats = async (req, res) => {
         }).select("seats")
       : [];
 
+    // Seats currently in active resale (shown as R, not as booked)
+    const resaleSeats = [
+      ...new Set(activeResaleListings.flatMap((l) => l.seats || [])),
+    ];
+
+    // Active locks
     const activeLocks = await SeatLock.find({
       show: showId,
       expiresAt: { $gt: new Date() },
     });
 
-    const bookedSeats = [
+    // bookedSeats = all confirmed seats MINUS resale seats (resale seats get separate R treatment)
+    const allConfirmedSeats = [
       ...new Set([
-        ...confirmedBookings.flatMap(
-          (b) => b.seats
-        ),
-        ...activeLocks.flatMap(
-          (l) => l.seats
-        ),
+        ...confirmedBookings.flatMap((b) => b.seats),
+        ...activeLocks.flatMap((l) => l.seats),
       ]),
     ];
 
-    const resaleSeats = [
-      ...new Set(activeResaleListings.flatMap((listing) => listing.seats || [])),
-    ];
+    // Remove resale seats from bookedSeats so they don't appear as locked
+    const bookedSeats = allConfirmedSeats.filter(
+      (seat) => !resaleSeats.includes(seat)
+    );
 
     if (includeResale) {
-      return res.json({
-        bookedSeats,
-        resaleSeats,
-      });
+      return res.json({ bookedSeats, resaleSeats });
     }
 
     return res.json(bookedSeats);
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    console.error("getBookedSeats error:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
