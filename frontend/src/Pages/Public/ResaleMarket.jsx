@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../config/api";
 import toast from "react-hot-toast";
 import Navbar from "../../Components/Navbar";
@@ -6,6 +7,8 @@ import ResaleInfoCard from "../../Components/ResaleInfoCard";
 import { MapPin, Ticket, Clock, TrendingDown } from "lucide-react";
 
 const ResaleMarket = () => {
+  const navigate = useNavigate();
+
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
@@ -63,15 +66,16 @@ const ResaleMarket = () => {
           color: "#f5c518",
         },
         handler: async function (response) {
-          try {
-            await API.post(`/resale/${id}/verify`, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
+  try {
+    const verifyResponse = await API.post(`/resale/${id}/verify`, {
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature,
+    });
 
-            toast.success("Resale ticket purchased successfully!");
-            fetchListings();
+    console.log("RESALE VERIFY RESPONSE:", verifyResponse.data);
+    toast.success("Resale ticket purchased successfully!");
+    navigate(`/booking/success/${verifyResponse.data.bookingId}`);
           } catch (err) {
             toast.error(
               err.response?.data?.message || "Payment verification failed"

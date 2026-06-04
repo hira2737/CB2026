@@ -66,10 +66,10 @@ const BookingSuccess = () => {
         }
 
         const { data } = bookingId
-          ? await API.get(`/bookings/${bookingId}`)
-          : await API.get(`/bookings/transaction/${tran_id}`);
+  ? await API.get(`/bookings/${bookingId}`)
+  : await API.get(`/bookings/transaction/${tran_id}`);
 
-        setBooking(data.booking || data);
+setBooking(data.booking || data);
       } catch (error) {
         console.error("Failed to fetch booking:", error);
         toast.error("Failed to load booking details");
@@ -118,7 +118,7 @@ const BookingSuccess = () => {
 
       const seatCount = booking?.seats?.length || 1;
       const admitLabel = `Admit ${ADMIT_WORDS[seatCount] || seatCount}`;
-
+      const isResaleTicket = booking?.isResalePurchase === true;
       pdf.setTextColor(245, 197, 24);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(11);
@@ -159,7 +159,17 @@ const BookingSuccess = () => {
 
       pdf.setTextColor(245, 197, 24);
       pdf.text("BOOK", 52 + pdf.getTextWidth("CINE"), 18);
+      if (isResaleTicket) {
+  pdf.setFillColor(245, 197, 24);
+  pdf.roundedRect(138, 8, 22, 8, 1.5, 1.5, "F");
 
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "bold");
+  pdf.text("RESALE", 141, 13.5);
+
+  pdf.setTextColor(255, 255, 255);
+}
       pdf.setFontSize(18);
       pdf.text(
         fitText(pdf, booking?.show?.movie?.title || "Movie", 92, 18),
