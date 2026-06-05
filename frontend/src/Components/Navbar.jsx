@@ -95,7 +95,8 @@ const Navbar = () => {
           </form>
 
           {user ? (
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+            // ✅ FIX: removed flex-wrap so icons never drop to second line on mobile
+            <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
               {/* Notification bell — visible to all logged-in users */}
               <NotificationBell />
 

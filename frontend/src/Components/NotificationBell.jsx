@@ -122,13 +122,15 @@ const NotificationBell = () => {
           <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5c518] px-1 text-[9px] font-black text-black leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
-          
         )}
       </button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-11 z-[9990] w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl shadow-black/70">
+        // ✅ FIX: On mobile (< sm), use fixed positioning pinned to right-4 top-[76px]
+        // so the dropdown is always fully visible regardless of where the bell sits.
+        // On sm+ screens, restore original absolute right-0 top-11 behaviour.
+        <div className="fixed right-4 top-[76px] z-[9990] w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl shadow-black/70 sm:absolute sm:right-0 sm:top-11 sm:w-80">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">
@@ -160,11 +162,10 @@ const NotificationBell = () => {
                     !n.isRead ? "bg-[#f5c518]/5" : ""
                   }`}
                 >
-        
                   <div className="mt-0.5 shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-[#f5c518]/10 border border-[#f5c518]/20 text-[#f5c518]">
-                     {getTypeIcon(n.type)}
+                    {getTypeIcon(n.type)}
                   </div>
-                  
+
                   <div className="min-w-0 flex-1">
                     <p className="text-xs leading-relaxed text-white break-words">
                       {n.message}
